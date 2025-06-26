@@ -9,7 +9,57 @@
         <h1 class="display-6 fw-bold text-dark mb-2">
             <i class="fas fa-lightbulb text-primary me-3"></i>{{ insights.topic }}
         </h1>
-                 <div class="d-flex flex-wrap gap-3 mb-3">
+        
+        <!-- Author and social info -->
+        <div class="d-flex align-items-center mb-3">
+            <div class="me-4">
+                <small class="text-muted">
+                    <i class="fas fa-user me-1"></i>
+                    <strong>{{ insights.author_name or 'Anonymous' }}</strong>
+                </small>
+            </div>
+            
+            <!-- Like button -->
+            {% if session.user_id %}
+            <button class="btn btn-sm btn-outline-danger like-btn me-2" 
+                    data-insight-id="{{ insights.id }}"
+                    data-liked="{{ 'true' if session.user_id in insights.liked_by else 'false' }}"
+                    onclick="toggleLike('{{ insights.id }}', this)">
+                <i class="fas fa-heart"></i>
+                <span class="like-count">{{ insights.likes or 0 }}</span>
+            </button>
+            {% else %}
+            <span class="btn btn-sm btn-outline-secondary me-2" disabled>
+                <i class="fas fa-heart"></i>
+                {{ insights.likes or 0 }}
+            </span>
+            {% endif %}
+            
+            <!-- Sharing toggle (only for author) -->
+            {% if session.user_id == insights.author_id %}
+            <div class="form-check form-switch me-3">
+                <input class="form-check-input" type="checkbox" id="shareToggle" 
+                       {{ 'checked' if insights.is_shared else '' }}
+                       onchange="toggleSharing('{{ insights.id }}', this.checked)">
+                <label class="form-check-label" for="shareToggle">
+                    <small>Public</small>
+                </label>
+            </div>
+            {% else %}
+            <!-- Show sharing status for non-authors -->
+            {% if insights.is_shared %}
+            <span class="badge bg-success me-2">
+                <i class="fas fa-share-alt"></i> Public
+            </span>
+            {% else %}
+            <span class="badge bg-warning me-2">
+                <i class="fas fa-lock"></i> Private
+            </span>
+            {% endif %}
+            {% endif %}
+        </div>
+        
+        <div class="d-flex flex-wrap gap-3 mb-3">
              <span class="badge bg-primary fs-6">
                  <i class="fas fa-brain me-1"></i>{{ insights.total_insights }} Insights
              </span>
@@ -26,12 +76,14 @@
         <a href="{{ url_for('index') }}" class="btn btn-outline-primary">
             <i class="fas fa-plus me-1"></i>New Research
         </a>
+        {% if session.user_id == insights.author_id %}
         <form method="POST" action="{{ url_for('delete_insights', insight_id=insights.id) }}" class="d-inline">
             <button type="submit" class="btn btn-outline-danger" 
                     onclick="return confirm('Are you sure you want to delete these insights?')">
                 <i class="fas fa-trash me-1"></i>Delete
             </button>
         </form>
+        {% endif %}
     </div>
 </div>
 
@@ -325,5 +377,103 @@
         styleSheet.textContent = printStyles;
         document.head.appendChild(styleSheet);
     });
+    
+    // Character counters for form fields
+    document.addEventListener('DOMContentLoaded', function() {
+        const topicInput = document.getElementById('topic');
+        const instructionsTextarea = document.getElementById('instructions');
+        
+        if (topicInput) {
+            updateCharacterCount(topicInput, 200);
+            topicInput.addEventListener('input', function() {
+                updateCharacterCount(this, 200);
+            });
+        }
+        
+        if (instructionsTextarea) {
+            updateCharacterCount(instructionsTextarea, 1000);
+            instructionsTextarea.addEventListener('input', function() {
+                updateCharacterCount(this, 1000);
+            });
+        }
+    });
+    
+    function updateCharacterCount(element, maxLength) {
+        const current = element.value.length;
+        const remaining = maxLength - current;
+        
+        // Create or update character counter
+        let counter = element.parentNode.querySelector('.char-counter');
+        if (!counter) {
+            counter = document.createElement('div');
+            counter.className = 'char-counter form-text text-end';
+            element.parentNode.appendChild(counter);
+        }
+        
+        counter.textContent = `${current}/${maxLength}`;
+        
+        // Color coding
+        if (remaining < 50) {
+            counter.style.color = '#dc3545'; // danger
+        } else if (remaining < 100) {
+            counter.style.color = '#fd7e14'; // warning
+        } else {
+            counter.style.color = '#6c757d'; // muted
+        }
+    }
+    
+    // Form submission with loading state
+    document.addEventListener('DOMContentLoaded', function() {
+        const forms = document.querySelectorAll('form[data-loading]');
+        
+        forms.forEach(form => {
+            form.addEventListener('submit', function() {
+                const submitBtn = form.querySelector('button[type="submit"]');
+                if (submitBtn) {
+                    showLoading(submitBtn);
+                }
+            });
+        });
+    });
+    
+    // Toggle sharing status
+    async function toggleSharing(insightId, isShared) {
+        try {
+            const response = await fetch(`/api/insights/${insightId}/share`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ is_shared: isShared })
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                
+                // Show success message
+                showFlashMessage(
+                    isShared ? 'Insight is now public and visible to all users!' : 'Insight is now private.', 
+                    'success'
+                );
+                
+            } else {
+                const error = await response.json();
+                console.error('Sharing toggle failed:', error);
+                showFlashMessage('Failed to update sharing status. Please try again.', 'error');
+                
+                // Revert toggle on error
+                const toggle = document.getElementById('shareToggle');
+                if (toggle) toggle.checked = !isShared;
+            }
+            
+        } catch (error) {
+            console.error('Sharing toggle error:', error);
+            showFlashMessage('Failed to update sharing status. Please try again.', 'error');
+            
+            // Revert toggle on error
+            const toggle = document.getElementById('shareToggle');
+            if (toggle) toggle.checked = !isShared;
+        }
+    }
 </script>
 {% endblock %} 

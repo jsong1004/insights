@@ -1,0 +1,246 @@
+{% extends "base.html" %}
+
+{% block title %}Login - AI Insights Generator{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-card">
+        <h2 class="text-center mb-4">
+            <i class="fas fa-brain text-primary me-2"></i>Login to AI Insights
+        </h2>
+        
+        <div id="auth-error" class="alert alert-danger d-none" role="alert"></div>
+        
+        <form id="login-form">
+            <div class="mb-3">
+                <label for="email" class="form-label">Email</label>
+                <input type="email" class="form-control" id="email" required>
+            </div>
+            
+            <div class="mb-3">
+                <label for="password" class="form-label">Password</label>
+                <input type="password" class="form-control" id="password" required>
+            </div>
+            
+            <div class="mb-3 form-check">
+                <input type="checkbox" class="form-check-input" id="remember">
+                <label class="form-check-label" for="remember">Remember me</label>
+            </div>
+            
+            <button type="submit" class="btn btn-primary w-100 mb-3">
+                <span class="btn-text">Login</span>
+                <span class="spinner-border spinner-border-sm d-none" role="status"></span>
+            </button>
+            
+            <div class="text-center">
+                <p class="mb-2">Don't have an account? <a href="{{ url_for('auth.signup') }}">Sign up</a></p>
+                <p><a href="#" id="forgot-password">Forgot password?</a></p>
+            </div>
+        </form>
+        
+        <hr class="my-4">
+        
+        <button id="google-signin" class="btn btn-outline-secondary w-100">
+            <i class="fab fa-google me-2"></i>Continue with Google
+        </button>
+    </div>
+</div>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-auth-compat.js"></script>
+
+<script>
+// Firebase configuration for ai-biz-6b7ec project
+const firebaseConfig = {
+    apiKey: "AIzaSyBAX9Fa4LHB1Kk0Q6rrOfm6M6xAZezvT1U",
+    authDomain: "ai-biz-6b7ec.firebaseapp.com",
+    projectId: "ai-biz-6b7ec",
+    storageBucket: "ai-biz-6b7ec.firebasestorage.app",
+    messagingSenderId: "22835475779",
+    appId: "1:22835475779:web:121c3ef155a7838eac2bf6",
+    measurementId: "G-XB962NM878"
+};
+
+// Initialize Firebase
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+
+// Login form handler
+document.getElementById('login-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    const spinner = submitBtn.querySelector('.spinner-border');
+    const btnText = submitBtn.querySelector('.btn-text');
+    
+    // Show loading state
+    spinner.classList.remove('d-none');
+    btnText.textContent = 'Logging in...';
+    submitBtn.disabled = true;
+    
+    try {
+        // Sign in with Firebase
+        const userCredential = await auth.signInWithEmailAndPassword(email, password);
+        const idToken = await userCredential.user.getIdToken();
+        
+        // Send token to backend
+        const response = await fetch('/auth/api/login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ idToken })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            // Redirect to home or original page
+            const next = new URLSearchParams(window.location.search).get('next');
+            window.location.href = next || '/';
+        } else {
+            throw new Error(data.error || 'Login failed');
+        }
+        
+    } catch (error) {
+        console.error('Login error:', error);
+        document.getElementById('auth-error').textContent = error.message;
+        document.getElementById('auth-error').classList.remove('d-none');
+    } finally {
+        spinner.classList.add('d-none');
+        btnText.textContent = 'Login';
+        submitBtn.disabled = false;
+    }
+});
+
+// Google Sign-in
+document.getElementById('google-signin').addEventListener('click', async () => {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    
+    try {
+        const result = await auth.signInWithPopup(provider);
+        const idToken = await result.user.getIdToken();
+        
+        // Send token to backend
+        const response = await fetch('/auth/api/login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ idToken })
+        });
+        
+        if (response.ok) {
+            window.location.href = '/';
+        } else {
+            const data = await response.json();
+            throw new Error(data.error || 'Google sign-in failed');
+        }
+        
+    } catch (error) {
+        console.error('Google sign-in error:', error);
+        document.getElementById('auth-error').textContent = 'Google sign-in failed: ' + error.message;
+        document.getElementById('auth-error').classList.remove('d-none');
+    }
+});
+
+// Handle forgot password
+document.getElementById('forgot-password').addEventListener('click', async (e) => {
+    e.preventDefault();
+    
+    const email = document.getElementById('email').value;
+    if (!email) {
+        alert('Please enter your email address first');
+        return;
+    }
+    
+    try {
+        await auth.sendPasswordResetEmail(email);
+        alert('Password reset email sent! Please check your inbox.');
+    } catch (error) {
+        alert('Error sending password reset email: ' + error.message);
+    }
+});
+</script>
+
+<style>
+.auth-container {
+    min-height: 80vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.auth-card {
+    background: white;
+    padding: 2.5rem;
+    border-radius: 20px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 420px;
+    backdrop-filter: blur(10px);
+}
+
+.auth-card h2 {
+    color: #333;
+    font-weight: 600;
+}
+
+.form-control {
+    border-radius: 10px;
+    border: 2px solid #e9ecef;
+    padding: 0.75rem;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    border-radius: 10px;
+    padding: 0.75rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+}
+
+.btn-outline-secondary {
+    border-radius: 10px;
+    padding: 0.75rem;
+    border: 2px solid #6c757d;
+    transition: all 0.3s ease;
+}
+
+.btn-outline-secondary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(108, 117, 125, 0.3);
+}
+
+.alert {
+    border-radius: 10px;
+    border: none;
+}
+
+a {
+    color: #667eea;
+    text-decoration: none;
+}
+
+a:hover {
+    color: #764ba2;
+    text-decoration: underline;
+}
+</style>
+{% endblock %} 

@@ -1,0 +1,27 @@
+# Flask Framework
+Flask==3.1.1
+python-dotenv==1.0.1
+
+# Firebase Authentication & Firestore
+firebase-admin==6.9.0
+google-cloud-firestore==2.21.0
+google-cloud-secretmanager>=2.20.0
+
+# CrewAI and AI Tools
+crewai>=0.134.0
+crewai-tools>=0.56.0
+openai>=1.77.0
+
+# Data Processing & Validation
+pydantic>=2.10.0
+pandas>=2.2.0
+numpy>=1.26.0
+
+# HTTP & Web Requests
+requests>=2.32.0
+httpx>=0.28.0
+
+# Development & Utilities
+python-dateutil>=2.9.0
+packaging>=24.0
+six>=1.17.0 

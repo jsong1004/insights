@@ -1,0 +1,280 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - AI Insights Generator{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="dashboard-header mb-4">
+                <h1 class="h3 mb-0">
+                    <i class="fas fa-tachometer-alt text-primary me-2"></i>
+                    Dashboard
+                </h1>
+                <p class="text-muted">Welcome back! Here's your account overview.</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <!-- User Info Card -->
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="fas fa-user text-info me-2"></i>
+                        Account Info
+                    </h5>
+                    
+                    <div class="user-info">
+                        <p><strong>Email:</strong> {{ session.user_email or 'Not available' }}</p>
+                        <p><strong>Email Verified:</strong> 
+                            {% if session.email_verified %}
+                                <span class="badge bg-success">Verified</span>
+                            {% else %}
+                                <span class="badge bg-warning">Not Verified</span>
+                            {% endif %}
+                        </p>
+                        <p><strong>User ID:</strong> <code>{{ session.user_id[:8] }}...</code></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Usage Stats Card -->
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="fas fa-chart-bar text-success me-2"></i>
+                        Usage Stats
+                    </h5>
+                    
+                    <div class="usage-stats">
+                        {% if user_data and user_data.usage %}
+                            <p><strong>Insights Generated:</strong> {{ user_data.usage.insights_generated or 0 }}</p>
+                            <p><strong>Insights Remaining:</strong> {{ user_data.usage.insights_remaining or 0 }}</p>
+                            <div class="progress">
+                                {% set used = user_data.usage.insights_generated or 0 %}
+                                {% set total = (user_data.usage.insights_generated or 0) + (user_data.usage.insights_remaining or 0) %}
+                                {% set percentage = (used / total * 100) if total > 0 else 0 %}
+                                <div class="progress-bar" role="progressbar" style="width: {{ percentage }}%" 
+                                     aria-valuenow="{{ percentage }}" aria-valuemin="0" aria-valuemax="100">
+                                    {{ "%.0f"|format(percentage) }}%
+                                </div>
+                            </div>
+                        {% else %}
+                            <p class="text-muted">Usage data not available</p>
+                            <small>Data will appear after your first insight generation</small>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Subscription Card -->
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="fas fa-crown text-warning me-2"></i>
+                        Subscription
+                    </h5>
+                    
+                    <div class="subscription-info">
+                        {% if user_data and user_data.subscription %}
+                            <p><strong>Plan:</strong> {{ user_data.subscription.plan.title() }}</p>
+                            <p><strong>Status:</strong> 
+                                <span class="badge bg-success">{{ user_data.subscription.status.title() }}</span>
+                            </p>
+                        {% else %}
+                            <p class="text-muted">Free Trial</p>
+                            <p><small>Start generating insights with your free trial credits!</small></p>
+                            <a href="/billing/plans" class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-star me-1"></i>
+                                Upgrade Plan
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Quick Actions -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="fas fa-bolt text-primary me-2"></i>
+                        Quick Actions
+                    </h5>
+                    
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <a href="/" class="btn btn-primary w-100">
+                                <i class="fas fa-brain me-2"></i>
+                                Generate Insights
+                            </a>
+                        </div>
+                        
+                        <div class="col-md-3 mb-3">
+                            <button class="btn btn-outline-secondary w-100" onclick="location.reload()">
+                                <i class="fas fa-sync-alt me-2"></i>
+                                Refresh Data
+                            </button>
+                        </div>
+                        
+                        <div class="col-md-3 mb-3">
+                            <button class="btn btn-outline-info w-100" onclick="loadUserData()">
+                                <i class="fas fa-user-cog me-2"></i>
+                                Update Profile
+                            </button>
+                        </div>
+                        
+                        <div class="col-md-3 mb-3">
+                            <button class="btn btn-outline-danger w-100" onclick="logout()">
+                                <i class="fas fa-sign-out-alt me-2"></i>
+                                Logout
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Activity (Placeholder) -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="fas fa-history text-secondary me-2"></i>
+                        Recent Activity
+                    </h5>
+                    
+                    <div class="activity-list">
+                        <p class="text-muted text-center py-4">
+                            <i class="fas fa-clock fa-2x mb-3 d-block"></i>
+                            No recent activity to display
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Dashboard JavaScript functionality
+async function loadUserData() {
+    try {
+        const response = await fetch('/auth/api/user');
+        const data = await response.json();
+        
+        if (response.ok) {
+            console.log('User data:', data);
+            // You can update the UI with fresh data here
+        } else {
+            console.error('Failed to load user data:', data);
+        }
+    } catch (error) {
+        console.error('Error loading user data:', error);
+    }
+}
+
+async function logout() {
+    if (confirm('Are you sure you want to logout?')) {
+        try {
+            const response = await fetch('/auth/api/logout', {
+                method: 'POST'
+            });
+            
+            if (response.ok) {
+                window.location.href = '/';
+            } else {
+                alert('Logout failed. Please try again.');
+            }
+        } catch (error) {
+            console.error('Logout error:', error);
+            alert('Logout failed. Please try again.');
+        }
+    }
+}
+
+// Load fresh user data on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadUserData();
+});
+</script>
+
+<style>
+.dashboard-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 2rem;
+    border-radius: 15px;
+    margin-bottom: 2rem;
+}
+
+.card {
+    border: none;
+    border-radius: 15px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1) !important;
+}
+
+.card-title {
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+.user-info p, .usage-stats p, .subscription-info p {
+    margin-bottom: 0.5rem;
+}
+
+.progress {
+    height: 8px;
+    border-radius: 10px;
+    background-color: #e9ecef;
+}
+
+.progress-bar {
+    border-radius: 10px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.btn {
+    border-radius: 10px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+}
+
+.badge {
+    font-size: 0.8rem;
+    padding: 0.4rem 0.8rem;
+    border-radius: 10px;
+}
+
+code {
+    background-color: #f8f9fa;
+    padding: 0.2rem 0.4rem;
+    border-radius: 4px;
+    font-size: 0.9rem;
+}
+
+.activity-list {
+    min-height: 150px;
+}
+</style>
+{% endblock %} 

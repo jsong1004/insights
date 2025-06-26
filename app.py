@@ -10,7 +10,7 @@ import logging
 import uuid
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any
-from flask import Flask, render_template, request, jsonify, redirect, url_for, flash, make_response
+from flask import Flask, render_template, request, jsonify, redirect, url_for, flash, make_response, session
 from dotenv import load_dotenv
 import traceback
 
@@ -24,6 +24,15 @@ try:
 except ImportError:
     FIRESTORE_AVAILABLE = False
     logging.warning("Firestore dependencies not available. Using in-memory storage only.")
+
+# Firebase Authentication imports
+try:
+    from auth.firebase_auth import FirebaseAuthManager, login_required, subscription_required
+    from auth.routes import auth_bp
+    FIREBASE_AUTH_AVAILABLE = True
+except ImportError:
+    FIREBASE_AUTH_AVAILABLE = False
+    logging.warning("Firebase Authentication not available.")
 
 # CrewAI imports
 from crewai import Agent, Task, Crew, Process
@@ -43,6 +52,46 @@ logger = logging.getLogger(__name__)
 # Flask app configuration
 app = Flask(__name__)
 app.secret_key = os.getenv('FLASK_SECRET_KEY', 'your-secret-key-here')
+
+# Configure session
+app.config['SESSION_PERMANENT'] = True
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=30)
+
+# Firebase configuration for frontend
+app.config['FIREBASE_API_KEY'] = "AIzaSyBAX9Fa4LHB1Kk0Q6rrOfm6M6xAZezvT1U"
+app.config['FIREBASE_AUTH_DOMAIN'] = "ai-biz-6b7ec.firebaseapp.com"
+app.config['FIREBASE_PROJECT_ID'] = "ai-biz-6b7ec"
+app.config['FIREBASE_STORAGE_BUCKET'] = "ai-biz-6b7ec.firebasestorage.app"
+app.config['FIREBASE_MESSAGING_SENDER_ID'] = "22835475779"
+app.config['FIREBASE_APP_ID'] = "1:22835475779:web:121c3ef155a7838eac2bf6"
+app.config['FIREBASE_MEASUREMENT_ID'] = "G-XB962NM878"
+
+# Initialize Firebase Authentication
+if FIREBASE_AUTH_AVAILABLE:
+    firebase_auth_manager = FirebaseAuthManager()
+    firebase_auth_manager.init_app(app)
+    app.extensions['firebase_auth'] = firebase_auth_manager
+    
+    # Register authentication blueprint
+    app.register_blueprint(auth_bp)
+    logger.info("✅ Firebase Authentication initialized")
+    
+    # Initialize User Firestore Manager
+    try:
+        from auth.firestore_manager import UserFirestoreManager
+        firestore_manager = UserFirestoreManager()
+        app.extensions['firestore_manager'] = firestore_manager
+        logger.info("✅ User Firestore Manager initialized")
+    except ImportError:
+        logger.warning("❌ User Firestore Manager not available")
+else:
+    logger.warning("❌ Firebase Authentication not available")
+
+# Make firestore_manager available globally for auth routes
+try:
+    firestore_manager = app.extensions.get('firestore_manager')
+except:
+    firestore_manager = None
 
 # Pydantic models for structured output
 class InsightItem(BaseModel):
@@ -65,6 +114,14 @@ class GeneratedInsights(BaseModel):
     processing_time: float = Field(description="Time taken to generate")
     total_tokens: int = Field(description="Total tokens used", default=0)
     agent_notes: str = Field(description="Notes from AI agents")
+    
+    # Social features
+    author_id: Optional[str] = Field(description="User ID of the author", default=None)
+    author_name: Optional[str] = Field(description="Display name of the author", default="Anonymous")
+    author_email: Optional[str] = Field(description="Email of the author", default=None)
+    is_shared: bool = Field(description="Whether this insight is publicly shared", default=True)
+    likes: int = Field(description="Number of likes", default=0)
+    liked_by: List[str] = Field(description="List of user IDs who liked this", default_factory=list)
 
 # In-memory storage for insights (fallback when Firestore is not available)
 insights_storage = {}
@@ -296,8 +353,149 @@ class FirestoreManager:
                 return True
             return False
 
-# Initialize Firestore manager
-firestore_manager = FirestoreManager()
+    def get_shared_insights(self) -> List[GeneratedInsights]:
+        """Get all publicly shared insights"""
+        all_insights = []
+        
+        try:
+            if self.use_firestore and self.db:
+                # Get shared insights from Firestore
+                docs = self.db.collection(FIRESTORE_COLLECTION)\
+                    .where('is_shared', '==', True)\
+                    .order_by('created_at', direction=firestore.Query.DESCENDING)\
+                    .stream()
+                
+                for doc in docs:
+                    try:
+                        data = doc.to_dict()
+                        # Remove Firestore-specific fields
+                        data.pop('created_at', None)
+                        data.pop('updated_at', None)
+                        
+                        insights = GeneratedInsights(**data)
+                        all_insights.append(insights)
+                        
+                    except Exception as e:
+                        logger.warning(f"Error parsing shared insight document {doc.id}: {e}")
+                        continue
+            
+            # Add shared insights from memory
+            for insight_id, insights in insights_storage.items():
+                if insights.is_shared and not any(i.id == insight_id for i in all_insights):
+                    all_insights.append(insights)
+            
+            # Sort by timestamp (newest first)
+            all_insights.sort(key=lambda x: x.timestamp, reverse=True)
+            
+            return all_insights
+            
+        except Exception as e:
+            logger.error(f"Error retrieving shared insights: {e}")
+            # Fallback to in-memory storage
+            return [insights for insights in insights_storage.values() if insights.is_shared]
+
+    def toggle_like(self, insight_id: str, user_id: str) -> bool:
+        """Toggle like for an insight by a user"""
+        try:
+            # First try to get from Firestore
+            if self.use_firestore and self.db:
+                doc_ref = self.db.collection(FIRESTORE_COLLECTION).document(insight_id)
+                
+                @firestore.transactional
+                def update_likes(transaction):
+                    doc = doc_ref.get(transaction=transaction)
+                    if doc.exists:
+                        data = doc.to_dict()
+                        liked_by = data.get('liked_by', [])
+                        likes = data.get('likes', 0)
+                        
+                        if user_id in liked_by:
+                            # Remove like
+                            liked_by.remove(user_id)
+                            likes = max(0, likes - 1)
+                        else:
+                            # Add like
+                            liked_by.append(user_id)
+                            likes += 1
+                        
+                        # Update document
+                        transaction.update(doc_ref, {
+                            'liked_by': liked_by,
+                            'likes': likes,
+                            'updated_at': firestore.SERVER_TIMESTAMP
+                        })
+                        
+                        # Update in-memory cache
+                        if insight_id in insights_storage:
+                            insights_storage[insight_id].liked_by = liked_by
+                            insights_storage[insight_id].likes = likes
+                        
+                        return True
+                    return False
+                
+                transaction = self.db.transaction()
+                return update_likes(transaction)
+            
+            else:
+                # Update in-memory storage
+                if insight_id in insights_storage:
+                    insight = insights_storage[insight_id]
+                    if user_id in insight.liked_by:
+                        insight.liked_by.remove(user_id)
+                        insight.likes = max(0, insight.likes - 1)
+                    else:
+                        insight.liked_by.append(user_id)
+                        insight.likes += 1
+                    return True
+                return False
+                
+        except Exception as e:
+            logger.error(f"Error toggling like for insight {insight_id}: {e}")
+            return False
+
+    def update_sharing_status(self, insight_id: str, is_shared: bool, user_id: str) -> bool:
+        """Update the sharing status of an insight"""
+        try:
+            if self.use_firestore and self.db:
+                doc_ref = self.db.collection(FIRESTORE_COLLECTION).document(insight_id)
+                
+                # Check if user owns this insight
+                doc = doc_ref.get()
+                if doc.exists:
+                    data = doc.to_dict()
+                    if data.get('author_id') != user_id:
+                        logger.warning(f"User {user_id} attempted to modify insight {insight_id} they don't own")
+                        return False
+                    
+                    doc_ref.update({
+                        'is_shared': is_shared,
+                        'updated_at': firestore.SERVER_TIMESTAMP
+                    })
+                    
+                    # Update in-memory cache
+                    if insight_id in insights_storage:
+                        insights_storage[insight_id].is_shared = is_shared
+                    
+                    return True
+            
+            else:
+                # Update in-memory storage
+                if insight_id in insights_storage:
+                    insight = insights_storage[insight_id]
+                    if insight.author_id == user_id:
+                        insight.is_shared = is_shared
+                        return True
+                return False
+                
+        except Exception as e:
+            logger.error(f"Error updating sharing status for insight {insight_id}: {e}")
+            return False
+
+# Initialize Insights Firestore manager
+insights_firestore_manager = FirestoreManager()
+
+# Keep the user firestore manager available globally
+firestore_manager = app.extensions.get('firestore_manager') or UserFirestoreManager()
 
 def get_api_keys() -> tuple:
     """Get API keys from environment variables"""
@@ -630,10 +828,19 @@ class AIInsightsCrew:
 @app.route('/')
 def index():
     """Main page with insights generator form"""
-    insights_list = firestore_manager.get_all_insights()
+    user_id = session.get('user_id')
+    
+    if user_id:
+        # Authenticated users see all insights (their own + shared)
+        insights_list = insights_firestore_manager.get_all_insights()
+    else:
+        # Non-authenticated users only see shared insights
+        insights_list = insights_firestore_manager.get_shared_insights()
+    
     return render_template('index.html', insights_list=insights_list)
 
 @app.route('/generate', methods=['POST'])
+@login_required
 def generate_insights():
     """Generate insights based on user input"""
     try:
@@ -666,9 +873,51 @@ def generate_insights():
         insights = crew_system.generate_insights(topic, instructions)
         logger.info(f"✅ Generated insights with ID: {insights.id}")
         
+        # Add author information and social features
+        user_id = session.get('user_id')
+        user_email = session.get('user_email', '')
+        
+        # Get user's display name from their profile
+        author_name = user_email.split('@')[0] if user_email else "Anonymous"
+        if firestore_manager and user_id:
+            try:
+                user_data = firestore_manager.get_user_data(user_id)
+                if user_data and user_data.get('display_name'):
+                    author_name = user_data['display_name']
+            except Exception as e:
+                logger.warning(f"Could not get user display name: {e}")
+        
+        # Update insights with author info and social features
+        insights.author_id = user_id
+        insights.author_name = author_name
+        insights.author_email = user_email
+        
+        # Check user's default sharing preference
+        default_sharing = True  # Default fallback
+        if user_id and firestore_manager:
+            try:
+                user_data = firestore_manager.get_user_data(user_id)
+                if user_data and user_data.get('preferences', {}).get('share_insights_by_default') is not None:
+                    default_sharing = user_data['preferences']['share_insights_by_default']
+            except Exception as e:
+                logger.warning(f"Could not get user sharing preference: {e}")
+        
+        insights.is_shared = default_sharing
+        insights.likes = 0
+        insights.liked_by = []
+        
+        # Store insights in Firestore with user association
+        if user_id and firestore_manager and firestore_manager.use_firestore:
+            # Update user usage statistics
+            try:
+                firestore_manager.increment_usage(user_id, 'insights_generated')
+                logger.info(f"✅ Updated usage statistics for user: {user_id}")
+            except Exception as e:
+                logger.warning(f"⚠️ Failed to update usage statistics: {e}")
+        
         # Store insights in Firestore
         logger.info(f"💾 Attempting to save insights: {insights.id}")
-        saved = firestore_manager.save_insights(insights)
+        saved = insights_firestore_manager.save_insights(insights)
         
         if saved:
             logger.info(f"✅ Successfully saved insights to storage: {insights.id}")
@@ -678,7 +927,7 @@ def generate_insights():
             flash(f'Generated insights for "{topic}" (saved to temporary storage)', 'warning')
         
         # Verify the insights can be retrieved
-        retrieved = firestore_manager.get_insights(insights.id)
+        retrieved = insights_firestore_manager.get_insights(insights.id)
         if retrieved:
             logger.info(f"✅ Verified insights can be retrieved: {insights.id}")
         else:
@@ -696,18 +945,18 @@ def generate_insights():
 @app.route('/insights/<insight_id>')
 def view_insights(insight_id):
     """View specific insights"""
-    insights = firestore_manager.get_insights(insight_id)
+    insights = insights_firestore_manager.get_insights(insight_id)
     if not insights:
         flash('Insights not found.', 'error')
         return redirect(url_for('index'))
     
-    insights_list = firestore_manager.get_all_insights()
+    insights_list = insights_firestore_manager.get_all_insights()
     return render_template('insights.html', insights=insights, insights_list=insights_list)
 
 @app.route('/delete/<insight_id>', methods=['POST'])
 def delete_insights(insight_id):
     """Delete specific insights"""
-    deleted = firestore_manager.delete_insights(insight_id)
+    deleted = insights_firestore_manager.delete_insights(insight_id)
     if deleted:
         flash('Insights deleted successfully.', 'success')
     else:
@@ -718,21 +967,72 @@ def delete_insights(insight_id):
 @app.route('/api/insights')
 def api_insights():
     """API endpoint to get all insights"""
-    insights_list = firestore_manager.get_all_insights()
+    insights_list = insights_firestore_manager.get_all_insights()
     return jsonify([insights.model_dump() for insights in insights_list])
 
 @app.route('/api/insights/<insight_id>')
 def api_get_insights(insight_id):
     """API endpoint to get specific insights"""
-    insights = firestore_manager.get_insights(insight_id)
+    insights = insights_firestore_manager.get_insights(insight_id)
     if insights:
         return jsonify(insights.model_dump())
     return jsonify({'error': 'Insights not found'}), 404
 
+@app.route('/api/insights/<insight_id>/like', methods=['POST'])
+@login_required
+def api_toggle_like(insight_id):
+    """API endpoint to toggle like for an insight"""
+    user_id = session.get('user_id')
+    
+    if not user_id:
+        return jsonify({'error': 'Authentication required'}), 401
+    
+    success = insights_firestore_manager.toggle_like(insight_id, user_id)
+    
+    if success:
+        # Get updated insight to return current like count
+        insights = insights_firestore_manager.get_insights(insight_id)
+        if insights:
+            return jsonify({
+                'success': True,
+                'likes': insights.likes,
+                'liked': user_id in insights.liked_by
+            })
+    
+    return jsonify({'error': 'Failed to toggle like'}), 500
+
+@app.route('/api/insights/<insight_id>/share', methods=['POST'])
+@login_required
+def api_toggle_sharing(insight_id):
+    """API endpoint to toggle sharing status for an insight"""
+    user_id = session.get('user_id')
+    
+    if not user_id:
+        return jsonify({'error': 'Authentication required'}), 401
+    
+    data = request.get_json()
+    is_shared = data.get('is_shared', True)
+    
+    success = insights_firestore_manager.update_sharing_status(insight_id, is_shared, user_id)
+    
+    if success:
+        return jsonify({
+            'success': True,
+            'is_shared': is_shared
+        })
+    
+    return jsonify({'error': 'Failed to update sharing status'}), 500
+
+@app.route('/api/shared-insights')
+def api_shared_insights():
+    """API endpoint to get all shared insights"""
+    insights_list = insights_firestore_manager.get_shared_insights()
+    return jsonify([insights.model_dump() for insights in insights_list])
+
 @app.route('/download/<insight_id>')
 def download_insights(insight_id):
     """Download insights as formatted HTML file"""
-    insights = firestore_manager.get_insights(insight_id)
+    insights = insights_firestore_manager.get_insights(insight_id)
     if not insights:
         flash('Insights not found.', 'error')
         return redirect(url_for('index'))
@@ -751,12 +1051,27 @@ def download_insights(insight_id):
 def status():
     """Status endpoint to check Firestore and system health"""
     try:
+        all_insights = insights_firestore_manager.get_all_insights()
+        shared_insights = insights_firestore_manager.get_shared_insights()
+        
         status_info = {
             'timestamp': datetime.now().isoformat(),
-            'firestore_enabled': firestore_manager.use_firestore,
-            'firestore_db_available': firestore_manager.db is not None,
-            'total_insights': len(firestore_manager.get_all_insights()),
+            'insights_firestore_enabled': insights_firestore_manager.use_firestore,
+            'insights_firestore_db_available': insights_firestore_manager.db is not None,
+            'auth_firestore_enabled': firestore_manager.use_firestore,
+            'auth_firestore_db_available': firestore_manager.db is not None,
+            'total_insights': len(all_insights),
+            'shared_insights': len(shared_insights),
             'memory_insights': len(insights_storage),
+            'insights_summary': [
+                {
+                    'id': insight.id,
+                    'topic': insight.topic,
+                    'author': insight.author_name,
+                    'is_shared': insight.is_shared,
+                    'likes': insight.likes
+                } for insight in all_insights
+            ],
             'environment': {
                 'openai_key_set': bool(os.getenv('OPENAI_API_KEY')),
                 'tavily_key_set': bool(os.getenv('TAVILY_API_KEY')),
@@ -767,16 +1082,19 @@ def status():
         }
         
         # Test Firestore connection if enabled
-        if firestore_manager.use_firestore and firestore_manager.db:
+        if insights_firestore_manager.use_firestore and insights_firestore_manager.db:
             try:
                 # Try to access the collection
-                collection_ref = firestore_manager.db.collection(FIRESTORE_COLLECTION)
+                collection_ref = insights_firestore_manager.db.collection(FIRESTORE_COLLECTION)
                 status_info['firestore_collection_accessible'] = True
                 logger.info("✅ Firestore collection is accessible from status endpoint")
             except Exception as e:
                 status_info['firestore_collection_accessible'] = False
                 status_info['firestore_error'] = str(e)
                 logger.error(f"❌ Firestore collection access failed: {e}")
+        else:
+            status_info['firestore_collection_accessible'] = False
+            status_info['firestore_error'] = 'Firestore not enabled or database not available'
         
         logger.info(f"📊 Status check: {status_info}")
         return jsonify(status_info)

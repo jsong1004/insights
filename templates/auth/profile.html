@@ -1,0 +1,400 @@
+{% extends "base.html" %}
+
+{% block title %}Profile - AI Insights Generator{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="profile-container">
+            <div class="profile-header text-center">
+                <div class="profile-avatar">
+                    {% if profile_data.photo_url %}
+                    <img src="{{ profile_data.photo_url }}" alt="Profile Picture" class="rounded-circle" width="120" height="120">
+                    {% else %}
+                    <div class="avatar-placeholder">
+                        <i class="fas fa-user-circle"></i>
+                    </div>
+                    {% endif %}
+                </div>
+                <h2 class="mt-3">{{ profile_data.display_name or 'User Profile' }}</h2>
+                <p class="text-muted">{{ profile_data.email }}</p>
+                {% if profile_data.email_verified %}
+                <span class="badge bg-success">
+                    <i class="fas fa-check-circle me-1"></i>Email Verified
+                </span>
+                {% else %}
+                <span class="badge bg-warning">
+                    <i class="fas fa-exclamation-triangle me-1"></i>Email Not Verified
+                </span>
+                {% endif %}
+            </div>
+
+            <!-- Profile Update Form -->
+            <div class="profile-form mt-4">
+                <form id="profile-form">
+                    <!-- Alert Messages -->
+                    <div id="profile-success" class="alert alert-success d-none" role="alert">
+                        <i class="fas fa-check-circle me-2"></i>
+                        <span id="success-message"></span>
+                    </div>
+
+                    <div id="profile-error" class="alert alert-danger d-none" role="alert">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <span id="error-message"></span>
+                    </div>
+
+                    <!-- Basic Information -->
+                    <div class="section-header">
+                        <h5><i class="fas fa-user me-2"></i>Basic Information</h5>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="display-name" class="form-label">Display Name</label>
+                        <input type="text" class="form-control" id="display-name" 
+                               value="{{ profile_data.display_name or '' }}" 
+                               placeholder="Enter your display name"
+                               maxlength="100">
+                        <div class="form-text">This name will be shown on your insights and comments.</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email Address</label>
+                        <input type="email" class="form-control" id="email" 
+                               value="{{ profile_data.email }}" readonly disabled>
+                        <div class="form-text">Email address cannot be changed here. Contact support if needed.</div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="bio" class="form-label">Bio</label>
+                        <textarea class="form-control" id="bio" rows="4" 
+                                  placeholder="Tell others about yourself..." 
+                                  maxlength="500">{{ profile_data.bio or '' }}</textarea>
+                        <div class="form-text">
+                            <span id="bio-counter">{{ (profile_data.bio or '')|length }}</span>/500 characters
+                        </div>
+                    </div>
+
+                    <!-- Preferences -->
+                    <div class="section-header">
+                        <h5><i class="fas fa-cog me-2"></i>Preferences</h5>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="email-notifications" 
+                                   {{ 'checked' if profile_data.preferences.email_notifications else '' }}>
+                            <label class="form-check-label" for="email-notifications">
+                                <strong>Email Notifications</strong>
+                                <br><small class="text-muted">Receive updates about your insights and account</small>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="share-by-default" 
+                                   {{ 'checked' if profile_data.preferences.share_insights_by_default else '' }}>
+                            <label class="form-check-label" for="share-by-default">
+                                <strong>Share Insights by Default</strong>
+                                <br><small class="text-muted">Make new insights public automatically</small>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="theme" class="form-label">Theme Preference</label>
+                        <select class="form-select" id="theme">
+                            <option value="light" {{ 'selected' if profile_data.preferences.theme == 'light' else '' }}>Light</option>
+                            <option value="dark" {{ 'selected' if profile_data.preferences.theme == 'dark' else '' }}>Dark</option>
+                            <option value="auto" {{ 'selected' if profile_data.preferences.theme == 'auto' else '' }}>Auto (System)</option>
+                        </select>
+                        <div class="form-text">Choose your preferred color scheme</div>
+                    </div>
+
+                    <!-- Account Information -->
+                    {% if profile_data.created_at or profile_data.last_login %}
+                    <div class="section-header">
+                        <h5><i class="fas fa-info-circle me-2"></i>Account Information</h5>
+                    </div>
+
+                    <div class="row">
+                        {% if profile_data.created_at %}
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Member Since</label>
+                            <div class="info-display">
+                                <i class="fas fa-calendar-alt me-2"></i>
+                                {{ moment(profile_data.created_at).format('MMMM DD, YYYY') if moment else profile_data.created_at.strftime('%B %d, %Y') if profile_data.created_at.strftime else profile_data.created_at }}
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if profile_data.last_login %}
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Last Login</label>
+                            <div class="info-display">
+                                <i class="fas fa-clock me-2"></i>
+                                {{ moment(profile_data.last_login).fromNow() if moment else profile_data.last_login.strftime('%B %d, %Y at %I:%M %p') if profile_data.last_login.strftime else profile_data.last_login }}
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+
+                    <!-- Action Buttons -->
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                        <a href="{{ url_for('auth.dashboard') }}" class="btn btn-outline-secondary me-md-2">
+                            <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                        </a>
+                        <button type="submit" class="btn btn-primary" id="save-profile">
+                            <span class="spinner-border spinner-border-sm d-none" role="status"></span>
+                            <i class="fas fa-save me-2"></i>
+                            <span class="btn-text">Save Changes</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Character counter for bio
+document.getElementById('bio').addEventListener('input', function() {
+    const bioLength = this.value.length;
+    document.getElementById('bio-counter').textContent = bioLength;
+    
+    // Change color based on length
+    const counter = document.getElementById('bio-counter');
+    if (bioLength > 450) {
+        counter.style.color = '#dc3545';
+    } else if (bioLength > 400) {
+        counter.style.color = '#fd7e14';
+    } else {
+        counter.style.color = '#6c757d';
+    }
+});
+
+// Profile form submission
+document.getElementById('profile-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const submitBtn = document.getElementById('save-profile');
+    const spinner = submitBtn.querySelector('.spinner-border');
+    const btnText = submitBtn.querySelector('.btn-text');
+    
+    // Show loading state
+    spinner.classList.remove('d-none');
+    btnText.textContent = 'Saving...';
+    submitBtn.disabled = true;
+    
+    // Hide previous messages
+    document.getElementById('profile-success').classList.add('d-none');
+    document.getElementById('profile-error').classList.add('d-none');
+    
+    try {
+        // Collect form data
+        const formData = {
+            display_name: document.getElementById('display-name').value.trim(),
+            bio: document.getElementById('bio').value.trim(),
+            preferences: {
+                email_notifications: document.getElementById('email-notifications').checked,
+                share_insights_by_default: document.getElementById('share-by-default').checked,
+                theme: document.getElementById('theme').value
+            }
+        };
+        
+        // Send update request
+        const response = await fetch('/auth/api/profile', {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(formData)
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            // Show success message
+            document.getElementById('success-message').textContent = data.message || 'Profile updated successfully!';
+            document.getElementById('profile-success').classList.remove('d-none');
+            
+            // Update page title if display name changed
+            if (formData.display_name) {
+                const profileHeader = document.querySelector('.profile-header h2');
+                profileHeader.textContent = formData.display_name;
+            }
+            
+            // Scroll to top to show success message
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            
+        } else {
+            throw new Error(data.error || 'Failed to update profile');
+        }
+        
+    } catch (error) {
+        console.error('Profile update error:', error);
+        document.getElementById('error-message').textContent = error.message;
+        document.getElementById('profile-error').classList.remove('d-none');
+        
+        // Scroll to top to show error message
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        
+    } finally {
+        // Reset button state
+        spinner.classList.add('d-none');
+        btnText.textContent = 'Save Changes';
+        submitBtn.disabled = false;
+    }
+});
+
+// Auto-hide success message after 5 seconds
+setTimeout(() => {
+    const successAlert = document.getElementById('profile-success');
+    if (!successAlert.classList.contains('d-none')) {
+        successAlert.classList.add('d-none');
+    }
+}, 5000);
+</script>
+
+<style>
+.profile-container {
+    background: white;
+    border-radius: 20px;
+    padding: 2rem;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+    margin: 2rem 0;
+}
+
+.profile-header {
+    border-bottom: 1px solid #e2e8f0;
+    padding-bottom: 2rem;
+    margin-bottom: 2rem;
+}
+
+.profile-avatar img {
+    border: 4px solid #667eea;
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+}
+
+.avatar-placeholder {
+    width: 120px;
+    height: 120px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+}
+
+.avatar-placeholder i {
+    font-size: 4rem;
+    color: white;
+}
+
+.section-header {
+    border-bottom: 2px solid #f1f5f9;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.5rem;
+}
+
+.section-header h5 {
+    color: #334155;
+    font-weight: 600;
+    margin: 0;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+.form-check-input:checked {
+    background-color: #667eea;
+    border-color: #667eea;
+}
+
+.form-check-input:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+.info-display {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 0.75rem;
+    color: #64748b;
+    font-weight: 500;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    border-radius: 10px;
+    font-weight: 600;
+    padding: 0.75rem 1.5rem;
+    transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+}
+
+.btn-outline-secondary {
+    border-radius: 10px;
+    font-weight: 600;
+    padding: 0.75rem 1.5rem;
+    transition: all 0.3s ease;
+}
+
+.btn-outline-secondary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(108, 117, 125, 0.3);
+}
+
+.alert {
+    border: none;
+    border-radius: 12px;
+    font-weight: 500;
+    margin-bottom: 1.5rem;
+}
+
+.alert-success {
+    background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+    color: #065f46;
+    border-left: 4px solid #10b981;
+}
+
+.alert-danger {
+    background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+    color: #991b1b;
+    border-left: 4px solid #ef4444;
+}
+
+@media (max-width: 768px) {
+    .profile-container {
+        margin: 1rem 0;
+        padding: 1.5rem;
+        border-radius: 15px;
+    }
+    
+    .profile-header {
+        padding-bottom: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .avatar-placeholder, .profile-avatar img {
+        width: 100px;
+        height: 100px;
+    }
+    
+    .avatar-placeholder i {
+        font-size: 3rem;
+    }
+}
+</style>
+{% endblock %} 

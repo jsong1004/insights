@@ -12,10 +12,52 @@
     </p>
 </div>
 
+{% if not session.user_id %}
+<!-- Authentication Notice for Guest Users -->
+<div class="insight-card border-warning">
+    <div class="d-flex align-items-center mb-3">
+        <div class="bg-warning text-white rounded-circle d-inline-flex align-items-center justify-content-center me-3" 
+             style="width: 50px; height: 50px;">
+            <i class="fas fa-lock fa-lg"></i>
+        </div>
+        <div>
+            <h3 class="insight-title mb-1 text-warning">
+                <i class="fas fa-sign-in-alt me-2"></i>Login Required
+            </h3>
+            <p class="mb-0 text-muted">Please sign in to generate AI insights</p>
+        </div>
+    </div>
+    
+    <div class="row align-items-center">
+        <div class="col-md-8">
+            <p class="mb-3">
+                To generate AI insights and access all features, you need to create an account or sign in. 
+                Your account will track your usage and store your generated insights for future reference.
+            </p>
+            
+            <div class="d-flex gap-3">
+                <a href="{{ url_for('auth.login') }}" class="btn btn-primary">
+                    <i class="fas fa-sign-in-alt me-2"></i>Login
+                </a>
+                <a href="{{ url_for('auth.signup') }}" class="btn btn-outline-primary">
+                    <i class="fas fa-user-plus me-2"></i>Create Account
+                </a>
+            </div>
+        </div>
+        <div class="col-md-4 text-center">
+            <i class="fas fa-shield-alt fa-4x text-warning opacity-75"></i>
+        </div>
+    </div>
+</div>
+{% endif %}
+
 <!-- Insights Generation Form -->
-<div class="insight-card">
+<div class="insight-card {% if not session.user_id %}opacity-50{% endif %}">
     <h2 class="insight-title">
         <i class="fas fa-plus-circle text-primary me-2"></i>Generate New Insights
+        {% if not session.user_id %}
+        <span class="badge bg-warning ms-2">Login Required</span>
+        {% endif %}
     </h2>
     
     <form method="POST" action="{{ url_for('generate_insights') }}" data-loading>
@@ -30,7 +72,8 @@
                        name="topic" 
                        placeholder="e.g., Artificial Intelligence in Healthcare, Climate Change Solutions, Quantum Computing..."
                        required
-                       maxlength="200">
+                       maxlength="200"
+                       {% if not session.user_id %}disabled{% endif %}>
                 <div class="form-text">
                     Enter the main topic you want our AI agents to research and analyze
                 </div>
@@ -45,7 +88,8 @@
                           name="instructions" 
                           rows="4"
                           placeholder="Provide specific guidance for the research:&#10;&#10;• Focus on recent developments (2023-2024)&#10;• Include market analysis and trends&#10;• Compare different approaches or solutions&#10;• Analyze potential risks and opportunities&#10;• Look for expert opinions and case studies&#10;&#10;The more specific your instructions, the better our AI agents can tailor the research to your needs."
-                          maxlength="1000"></textarea>
+                          maxlength="1000"
+                          {% if not session.user_id %}disabled{% endif %}></textarea>
                 <div class="form-text">
                     Optional: Provide specific instructions to guide the AI agents' research approach
                 </div>
@@ -53,6 +97,7 @@
         </div>
         
         <div class="d-grid">
+            {% if session.user_id %}
             <button type="submit" class="btn btn-primary btn-lg">
                 <span class="btn-text">
                     <i class="fas fa-rocket me-2"></i>Generate Insights
@@ -61,6 +106,11 @@
                     <i class="fas fa-spinner fa-spin me-2"></i>Generating Insights...
                 </span>
             </button>
+            {% else %}
+            <button type="button" class="btn btn-outline-secondary btn-lg" disabled>
+                <i class="fas fa-lock me-2"></i>Login Required to Generate Insights
+            </button>
+            {% endif %}
         </div>
     </form>
 </div>
