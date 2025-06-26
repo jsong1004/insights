@@ -73,11 +73,11 @@
     </div>
     
     <div class="d-flex gap-2">
-        <a href="{{ url_for('index') }}" class="btn btn-outline-primary">
+        <a href="{{ url_for('main.index') }}" class="btn btn-outline-primary">
             <i class="fas fa-plus me-1"></i>New Research
         </a>
         {% if session.user_id == insights.author_id %}
-        <form method="POST" action="{{ url_for('delete_insights', insight_id=insights.id) }}" class="d-inline">
+                                <form method="POST" action="{{ url_for('main.delete_insights', insight_id=insights.id) }}" class="d-inline">
             <button type="submit" class="btn btn-outline-danger" 
                     onclick="return confirm('Are you sure you want to delete these insights?')">
                 <i class="fas fa-trash me-1"></i>Delete
@@ -229,6 +229,17 @@
             <h6 class="fw-bold">Research Topic</h6>
             <p class="text-muted">{{ insights.topic }}</p>
             
+            <h6 class="fw-bold">Search Parameters</h6>
+            <p class="text-muted">
+                <i class="fas fa-globe me-1"></i>Source: 
+                {% if insights.source_type == 'finance' %}Finance & Business
+                {% elif insights.source_type == 'news' %}News Articles
+                {% else %}General Web Search{% endif %}
+                {% if insights.time_range %}
+                <br><i class="fas fa-calendar-alt me-1"></i>Time Range: Past {{ insights.time_range|title }}
+                {% endif %}
+            </p>
+            
             {% if insights.instructions %}
             <h6 class="fw-bold">Instructions Provided</h6>
             <p class="text-muted">{{ insights.instructions|truncate(150) }}</p>
@@ -249,10 +260,10 @@
 
 <!-- Action Buttons -->
 <div class="text-center mt-4">
-    <a href="{{ url_for('index') }}" class="btn btn-primary btn-lg me-3">
+    <a href="{{ url_for('main.index') }}" class="btn btn-primary btn-lg me-3">
         <i class="fas fa-plus me-2"></i>Generate New Insights
     </a>
-    <a href="{{ url_for('download_insights', insight_id=insights.id) }}" class="btn btn-outline-success btn-lg">
+                            <a href="{{ url_for('main.download_insights', insight_id=insights.id) }}" class="btn btn-outline-success btn-lg">
         <i class="fas fa-download me-2"></i>Download Report
     </a>
 </div>

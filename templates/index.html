@@ -60,7 +60,7 @@
         {% endif %}
     </h2>
     
-    <form method="POST" action="{{ url_for('generate_insights') }}" data-loading>
+                                <form method="POST" action="{{ url_for('main.generate_insights') }}" data-loading>
         <div class="row">
             <div class="col-12 mb-4">
                 <label for="topic" class="form-label fw-semibold">
@@ -76,6 +76,42 @@
                        {% if not session.user_id %}disabled{% endif %}>
                 <div class="form-text">
                     Enter the main topic you want our AI agents to research and analyze
+                </div>
+            </div>
+            
+            <div class="col-md-6 mb-4">
+                <label for="source" class="form-label fw-semibold">
+                    <i class="fas fa-globe me-2"></i>Source Type
+                </label>
+                <select class="form-select" 
+                        id="source" 
+                        name="source"
+                        {% if not session.user_id %}disabled{% endif %}>
+                    <option value="general" selected>General Web Search</option>
+                    <option value="news">News Articles</option>
+                    <option value="finance">Finance & Business</option>
+                </select>
+                <div class="form-text">
+                    Choose the type of sources to search for your research
+                </div>
+            </div>
+            
+            <div class="col-md-6 mb-4">
+                <label for="time_range" class="form-label fw-semibold">
+                    <i class="fas fa-calendar-alt me-2"></i>Time Range
+                </label>
+                <select class="form-select" 
+                        id="time_range" 
+                        name="time_range"
+                        {% if not session.user_id %}disabled{% endif %}>
+                    <option value="none" selected>None</option>
+                    <option value="day">Past Day</option>
+                    <option value="week">Past Week</option>
+                    <option value="month">Past Month</option>
+                    <option value="year">Past Year</option>
+                </select>
+                <div class="form-text">
+                    Filter results by publication date (optional)
                 </div>
             </div>
             
@@ -98,7 +134,7 @@
         
         <div class="d-grid">
             {% if session.user_id %}
-            <button type="submit" class="btn btn-primary btn-lg">
+            <button type="submit" class="btn btn-primary btn-lg" id="generate-insights-btn">
                 <span class="btn-text">
                     <i class="fas fa-rocket me-2"></i>Generate Insights
                 </span>
@@ -263,6 +299,8 @@
     document.addEventListener('DOMContentLoaded', function() {
         const topicInput = document.getElementById('topic');
         const instructionsTextarea = document.getElementById('instructions');
+        const insightsForm = document.querySelector('form[data-loading]');
+        const submitButton = insightsForm ? insightsForm.querySelector('button[type="submit"]') : null;
         
         // Add character counters
         function addCharacterCounter(element, maxLength) {
@@ -292,15 +330,115 @@
             });
         }
         
+        // Handle form submission with loading state
+        if (insightsForm && submitButton) {
+            let isSubmitting = false; // Prevent double submissions
+            
+            insightsForm.addEventListener('submit', function(e) {
+                // Debug logging
+                console.log('Form submission started');
+                console.log('Form action:', insightsForm.action);
+                console.log('Form method:', insightsForm.method);
+                console.log('Topic input value:', topicInput ? topicInput.value : 'Topic input not found');
+                console.log('Instructions textarea value:', instructionsTextarea ? instructionsTextarea.value : 'Instructions textarea not found');
+                
+                // Prevent double submissions
+                if (isSubmitting) {
+                    console.log('Preventing double submission');
+                    e.preventDefault();
+                    return false;
+                }
+                
+                // Validate required fields
+                const topic = topicInput.value.trim();
+                console.log('Trimmed topic value:', topic);
+                console.log('Topic length:', topic.length);
+                
+                if (!topic) {
+                    console.log('Empty topic - preventing submission');
+                    e.preventDefault();
+                    topicInput.focus();
+                    showFlashMessage('Please enter a research topic to continue.', 'warning');
+                    return false;
+                }
+                
+                console.log('Form validation passed, submitting...');
+                
+                // Set submission flag
+                isSubmitting = true;
+                
+                // Show loading state
+                showLoading(submitButton);
+                
+                // Show a flash message about the process
+                showFlashMessage(
+                    'AI agents are now researching your topic. This may take 1-2 minutes...', 
+                    'info'
+                );
+                
+                // Disable form fields AFTER a short delay to prevent changes during submission
+                // but allow the form data to be collected first
+                setTimeout(function() {
+                    topicInput.disabled = true;
+                    if (instructionsTextarea) {
+                        instructionsTextarea.disabled = true;
+                    }
+                    const sourceSelect = document.getElementById('source');
+                    const timeRangeSelect = document.getElementById('time_range');
+                    if (sourceSelect) sourceSelect.disabled = true;
+                    if (timeRangeSelect) timeRangeSelect.disabled = true;
+                }, 100);
+                
+                // Optional: Add a timeout to re-enable the form if something goes wrong
+                // This is a safety measure in case the page doesn't redirect
+                setTimeout(function() {
+                    hideLoading(submitButton);
+                    topicInput.disabled = false;
+                    if (instructionsTextarea) {
+                        instructionsTextarea.disabled = false;
+                    }
+                    const sourceSelect = document.getElementById('source');
+                    const timeRangeSelect = document.getElementById('time_range');
+                    if (sourceSelect) sourceSelect.disabled = false;
+                    if (timeRangeSelect) timeRangeSelect.disabled = false;
+                    isSubmitting = false;
+                }, 120000); // 2 minutes timeout
+            });
+        }
+        
         // Example topic click handlers
         document.querySelectorAll('.list-unstyled li').forEach(function(item) {
             item.style.cursor = 'pointer';
             item.addEventListener('click', function() {
                 const topicText = this.textContent.replace(/^\s*\S+\s*/, ''); // Remove the chevron icon
-                topicInput.value = topicText.trim();
-                topicInput.focus();
-                topicInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                if (topicInput) {
+                    topicInput.value = topicText.trim();
+                    topicInput.focus();
+                    topicInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    
+                    // Trigger input event to update character counter
+                    topicInput.dispatchEvent(new Event('input'));
+                }
             });
+        });
+        
+        // Handle page visibility change to hide loading state if user navigates away and back
+        document.addEventListener('visibilitychange', function() {
+            if (!document.hidden && submitButton && submitButton.classList.contains('loading')) {
+                // User came back to the page and button is still in loading state
+                // Check if we're still on the form page (not redirected to results)
+                if (window.location.pathname === '/') {
+                    hideLoading(submitButton);
+                    topicInput.disabled = false;
+                    if (instructionsTextarea) {
+                        instructionsTextarea.disabled = false;
+                    }
+                    const sourceSelect = document.getElementById('source');
+                    const timeRangeSelect = document.getElementById('time_range');
+                    if (sourceSelect) sourceSelect.disabled = false;
+                    if (timeRangeSelect) timeRangeSelect.disabled = false;
+                }
+            }
         });
     });
 </script>

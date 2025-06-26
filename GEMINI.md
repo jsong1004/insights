@@ -4,7 +4,7 @@ This document provides guidance for using the Gemini CLI to build, debug, and ma
 
 ## Project Overview
 
-This project is a Flask-based web application that allows users to generate deep insights on any topic using a multi-agent AI system powered by CrewAI. The application features a modern web interface for user interaction, and it uses Firestore for persistent data storage.
+This project is a Flask-based web application that allows users to generate deep insights on any topic using a multi-agent AI system powered by CrewAI. The application features a modern web interface for user interaction, and it uses Firestore for persistent data storage. It also includes a full-featured authentication system using Firebase Authentication, with social features like sharing and liking insights.
 
 ## Core Technologies
 
@@ -14,6 +14,7 @@ This project is a Flask-based web application that allows users to generate deep
 *   **OpenAI/OpenRouter:** For language model tasks.
 *   **Tavily/Serper:** For AI-focused search.
 *   **Google Cloud Firestore:** For persistent data storage.
+*   **Firebase Authentication:** For user authentication and management.
 *   **Google Cloud Secret Manager:** For API key storage.
 *   **Docker:** For containerization and deployment.
 *   **Bootstrap 5:** For the frontend UI.
@@ -22,11 +23,20 @@ This project is a Flask-based web application that allows users to generate deep
 
 ### `app.py`
 
-This is the main application file. It contains the Flask routes, the CrewAI agent definitions, and the logic for generating and storing insights. It also includes the `FirestoreManager` class for interacting with the Firestore database.
+This is the main application file. It contains the Flask routes, the CrewAI agent definitions, and the logic for generating and storing insights. It also includes the `FirestoreManager` class for interacting with the Firestore database, and it initializes the Firebase Authentication manager.
 
-### `requirements-flask.txt`
+### `auth/`
 
-This file lists all the Python dependencies for the project.
+This directory contains the authentication-related code.
+
+*   `__init__.py`: Initializes the authentication blueprint.
+*   `firebase_auth.py`: Contains the `FirebaseAuthManager` class, which handles user authentication and session management.
+*   `firestore_manager.py`: Contains the `UserFirestoreManager` class, which handles user data in Firestore.
+*   `routes.py`: Contains the authentication-related routes, such as `/login`, `/signup`, and `/logout`.
+
+### `requirements.txt` and `requirements-firebase.txt`
+
+These files list the Python dependencies for the project. `requirements.txt` is the main dependencies file, while `requirements-firebase.txt` is used for the Docker build.
 
 ### `Dockerfile.insight`
 
@@ -52,18 +62,14 @@ This directory contains the Jinja2 templates for the web interface.
 *   `index.html`: The home page of the application. It contains the form for generating new insights.
 *   `insights.html`: The page for displaying the generated insights.
 *   `download_report.html`: The template for the downloadable HTML report of the insights.
+*   `auth/`: This subdirectory contains the authentication-related templates, such as `login.html`, `signup.html`, and `dashboard.html`.
 
-### `FIRESTORE_SETUP.md`
+### `docs/`
 
-This file provides detailed instructions on how to set up a Firestore database for the project.
+This directory contains project documentation.
 
-### `OPENROUTER_INTEGRATION.md`
-
-This file explains how to integrate OpenRouter as an alternative to the OpenAI API for the language model tasks.
-
-### `README-flask-app.md`
-
-This is the main README file for the project. It provides a comprehensive overview of the application, its features, and how to use it.
+*   `enhancement.md`: A guide for enhancing the app for commercial operations.
+*   `phase1.md`: A detailed development guide for Phase 1 of the commercialization plan.
 
 ## Getting Started
 
@@ -75,7 +81,7 @@ This is the main README file for the project. It provides a comprehensive overvi
 *   You have the required API keys:
     *   OpenAI
     *   Tavily or Serper
-    *   A Google Cloud project with Firestore enabled.
+    *   A Google Cloud project with Firestore and Firebase Authentication enabled.
 
 ### Local Development
 
@@ -83,11 +89,11 @@ This is the main README file for the project. It provides a comprehensive overvi
     ```bash
     python -m venv venv
     source venv/bin/activate
-    pip install -r requirements-flask.txt
+    pip install -r requirements.txt
     ```
 
 2.  **Configure environment variables:**
-    Create a `.env` file and add your API keys and Google Cloud project details. See `README-flask-app.md` for the required variables.
+    Create a `.env` file and add your API keys and Firebase project details. See `environment-template.txt` for a template.
 
 3.  **Run the application:**
     ```bash

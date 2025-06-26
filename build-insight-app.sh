@@ -14,6 +14,15 @@ REPOSITORY_NAME="cloud-run-source-deploy"
 IMAGE_NAME="ai-insights-generator"
 IMAGE_TAG="latest"
 
+# Firebase Configuration (update these with your actual values)
+FIREBASE_PROJECT_ID="${PROJECT_ID}"  # Usually same as Google Cloud project
+FIREBASE_WEB_API_KEY=""  # Get from Firebase console
+FIREBASE_AUTH_DOMAIN="${PROJECT_ID}.firebaseapp.com"
+FIREBASE_STORAGE_BUCKET="${PROJECT_ID}.appspot.com"
+FIREBASE_MESSAGING_SENDER_ID=""  # Get from Firebase console
+FIREBASE_APP_ID=""  # Get from Firebase console
+FIREBASE_MEASUREMENT_ID=""  # Optional, from Firebase console
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -53,9 +62,13 @@ show_usage() {
     echo "  $0 prod --push my-project    # Deploy to specific project"
     echo ""
     echo "Environment variables (set these before running):"
-    echo "  OPENAI_API_KEY    - Required for CrewAI agents"
-    echo "  TAVILY_API_KEY    - Required for search functionality"
-    echo "  SERPER_API_KEY    - Optional alternative search"
+    echo "  OPENAI_API_KEY          - Required for CrewAI agents"
+    echo "  TAVILY_API_KEY          - Required for search functionality"
+    echo "  SERPER_API_KEY          - Optional alternative search"
+    echo "  FIREBASE_WEB_API_KEY    - Required for Firebase authentication"
+    echo "  FIREBASE_MESSAGING_SENDER_ID - Required for Firebase"
+    echo "  FIREBASE_APP_ID         - Required for Firebase"
+    echo "  FIREBASE_MEASUREMENT_ID - Optional for Firebase analytics"
 }
 
 # Parse arguments
@@ -98,7 +111,7 @@ fi
 
 FULL_IMAGE_NAME="${REGION}-docker.pkg.dev/$PROJECT_ID/$REPOSITORY_NAME/$IMAGE_NAME:$IMAGE_TAG"
 
-log_info "🚀 Deploying AI Insights Generator to Google Cloud Run Service"
+log_info "🚀 Deploying AI Insights Generator with Firebase Auth to Google Cloud Run Service"
 log_info "Project ID: $PROJECT_ID"
 log_info "Region: $REGION"
 log_info "Service: $SERVICE_NAME"
@@ -119,8 +132,8 @@ if [ ! -f "Dockerfile.insight" ]; then
     exit 1
 fi
 
-if [ ! -f "requirements-flask.txt" ]; then
-    log_error "requirements-flask.txt not found!"
+if [ ! -f "requirements-firebase.txt" ]; then
+    log_error "requirements-firebase.txt not found!"
     exit 1
 fi
 
@@ -134,6 +147,11 @@ if [ ! -d "templates" ]; then
     exit 1
 fi
 
+if [ ! -d "auth" ]; then
+    log_error "auth directory not found!"
+    exit 1
+fi
+
 # Enable required APIs
 log_info "📋 Enabling required Google Cloud APIs..."
 gcloud services enable \
@@ -141,14 +159,19 @@ gcloud services enable \
     run.googleapis.com \
     artifactregistry.googleapis.com \
     secretmanager.googleapis.com \
-    iam.googleapis.com
+    iam.googleapis.com \
+    firebase.googleapis.com \
+    firestore.googleapis.com \
+    identitytoolkit.googleapis.com || {
+    log_warning "Some APIs may not be available - continuing with basic deployment"
+}
 
 # Create service account if it doesn't exist
 log_info "👤 Creating service account..."
 if ! gcloud iam service-accounts describe "${SERVICE_ACCOUNT_NAME}@${PROJECT_ID}.iam.gserviceaccount.com" >/dev/null 2>&1; then
     gcloud iam service-accounts create $SERVICE_ACCOUNT_NAME \
         --display-name="AI Insights Generator Service" \
-        --description="Service account for AI Insights Generator Flask app"
+        --description="Service account for AI Insights Generator Flask app with Firebase auth"
 fi
 
 # Grant necessary permissions
@@ -157,29 +180,61 @@ gcloud projects add-iam-policy-binding $PROJECT_ID \
     --member="serviceAccount:${SERVICE_ACCOUNT_NAME}@${PROJECT_ID}.iam.gserviceaccount.com" \
     --role="roles/secretmanager.secretAccessor"
 
-gcloud projects add-iam-policy-binding $PROJECT_ID     --member="serviceAccount:${SERVICE_ACCOUNT_NAME}@${PROJECT_ID}.iam.gserviceaccount.com"     --role="roles/logging.logWriter"
+gcloud projects add-iam-policy-binding $PROJECT_ID \
+    --member="serviceAccount:${SERVICE_ACCOUNT_NAME}@${PROJECT_ID}.iam.gserviceaccount.com" \
+    --role="roles/logging.logWriter"
 
-gcloud projects add-iam-policy-binding $PROJECT_ID     --member="serviceAccount:${SERVICE_ACCOUNT_NAME}@${PROJECT_ID}.iam.gserviceaccount.com"     --role="roles/datastore.user" 
+gcloud projects add-iam-policy-binding $PROJECT_ID \
+    --member="serviceAccount:${SERVICE_ACCOUNT_NAME}@${PROJECT_ID}.iam.gserviceaccount.com" \
+    --role="roles/datastore.user"
+
+# Additional Firebase/Firestore permissions
+gcloud projects add-iam-policy-binding $PROJECT_ID \
+    --member="serviceAccount:${SERVICE_ACCOUNT_NAME}@${PROJECT_ID}.iam.gserviceaccount.com" \
+    --role="roles/firebase.admin"
+
+gcloud projects add-iam-policy-binding $PROJECT_ID \
+    --member="serviceAccount:${SERVICE_ACCOUNT_NAME}@${PROJECT_ID}.iam.gserviceaccount.com" \
+    --role="roles/firestore.serviceAgent"
 
 # Create secrets (you'll need to add the actual values)
 log_info "🔐 Creating secrets (please update with actual values later)..."
 
-# Create OPENAI_API_KEY secret if it doesn't exist
+# Create AI API secrets
 if ! gcloud secrets describe OPENAI_API_KEY >/dev/null 2>&1; then
     echo "your-openai-api-key-here" | gcloud secrets create OPENAI_API_KEY --data-file=-
     log_warning "Please update OPENAI_API_KEY secret with your actual OpenAI API key"
 fi
 
-# Create TAVILY_API_KEY secret if it doesn't exist
 if ! gcloud secrets describe TAVILY_API_KEY >/dev/null 2>&1; then
     echo "your-tavily-api-key-here" | gcloud secrets create TAVILY_API_KEY --data-file=-
     log_warning "Please update TAVILY_API_KEY secret with your actual Tavily API key"
 fi
 
-# Create SERPER_API_KEY secret if it doesn't exist (optional)
 if ! gcloud secrets describe SERPER_API_KEY >/dev/null 2>&1; then
     echo "your-serper-api-key-here" | gcloud secrets create SERPER_API_KEY --data-file=-
     log_warning "Please update SERPER_API_KEY secret with your actual Serper API key (optional)"
+fi
+
+# Create Firebase secrets
+if ! gcloud secrets describe FIREBASE_WEB_API_KEY >/dev/null 2>&1; then
+    echo "your-firebase-web-api-key-here" | gcloud secrets create FIREBASE_WEB_API_KEY --data-file=-
+    log_warning "Please update FIREBASE_WEB_API_KEY secret with your actual Firebase Web API key"
+fi
+
+if ! gcloud secrets describe FIREBASE_MESSAGING_SENDER_ID >/dev/null 2>&1; then
+    echo "your-firebase-messaging-sender-id" | gcloud secrets create FIREBASE_MESSAGING_SENDER_ID --data-file=-
+    log_warning "Please update FIREBASE_MESSAGING_SENDER_ID secret with your actual Firebase Messaging Sender ID"
+fi
+
+if ! gcloud secrets describe FIREBASE_APP_ID >/dev/null 2>&1; then
+    echo "your-firebase-app-id" | gcloud secrets create FIREBASE_APP_ID --data-file=-
+    log_warning "Please update FIREBASE_APP_ID secret with your actual Firebase App ID"
+fi
+
+if ! gcloud secrets describe FIREBASE_MEASUREMENT_ID >/dev/null 2>&1; then
+    echo "your-firebase-measurement-id" | gcloud secrets create FIREBASE_MEASUREMENT_ID --data-file=-
+    log_warning "Please update FIREBASE_MEASUREMENT_ID secret with your actual Firebase Measurement ID (optional)"
 fi
 
 # Check if Artifact Registry repository exists, create if not
@@ -189,7 +244,7 @@ if ! gcloud artifacts repositories describe $REPOSITORY_NAME --location=$REGION 
     gcloud artifacts repositories create $REPOSITORY_NAME \
         --repository-format=docker \
         --location=$REGION \
-        --description="Repository for AI Insights Generator Service" \
+        --description="Repository for AI Insights Generator Service with Firebase" \
         --project=$PROJECT_ID
 else
     log_info "Repository $REPOSITORY_NAME already exists"
@@ -240,6 +295,12 @@ fi
 # Deploy the Cloud Run Service
 log_info "🚀 Deploying Cloud Run Service..."
 
+# Prepare Firebase environment variables
+FIREBASE_ENV_VARS="GOOGLE_CLOUD_PROJECT=$PROJECT_ID,FIREBASE_PROJECT_ID=$FIREBASE_PROJECT_ID,FIREBASE_AUTH_DOMAIN=$FIREBASE_AUTH_DOMAIN,FIREBASE_STORAGE_BUCKET=$FIREBASE_STORAGE_BUCKET"
+
+# Prepare secrets configuration
+SECRETS_CONFIG="OPENAI_API_KEY=OPENAI_API_KEY:latest,TAVILY_API_KEY=TAVILY_API_KEY:latest,SERPER_API_KEY=SERPER_API_KEY:latest,FIREBASE_WEB_API_KEY=FIREBASE_WEB_API_KEY:latest,FIREBASE_MESSAGING_SENDER_ID=FIREBASE_MESSAGING_SENDER_ID:latest,FIREBASE_APP_ID=FIREBASE_APP_ID:latest,FIREBASE_MEASUREMENT_ID=FIREBASE_MEASUREMENT_ID:latest"
+
 # Check if service exists, if not create it, otherwise update it
 if gcloud run services describe $SERVICE_NAME --region=$REGION --project=$PROJECT_ID >/dev/null 2>&1; then
     log_info "Updating existing service..."
@@ -255,8 +316,8 @@ if gcloud run services describe $SERVICE_NAME --region=$REGION --project=$PROJEC
         --concurrency 1000 \
         --min-instances 0 \
         --max-instances 10 \
-        --set-env-vars GOOGLE_CLOUD_PROJECT=$PROJECT_ID \
-        --set-secrets OPENAI_API_KEY=OPENAI_API_KEY:latest,TAVILY_API_KEY=TAVILY_API_KEY:latest,SERPER_API_KEY=SERPER_API_KEY:latest \
+        --set-env-vars "$FIREBASE_ENV_VARS" \
+        --set-secrets "$SECRETS_CONFIG" \
         --service-account "${SERVICE_ACCOUNT_NAME}@${PROJECT_ID}.iam.gserviceaccount.com" \
         --project=$PROJECT_ID
 else
@@ -273,8 +334,8 @@ else
         --concurrency 1000 \
         --min-instances 0 \
         --max-instances 10 \
-        --set-env-vars GOOGLE_CLOUD_PROJECT=$PROJECT_ID \
-        --set-secrets OPENAI_API_KEY=OPENAI_API_KEY:latest,TAVILY_API_KEY=TAVILY_API_KEY:latest,SERPER_API_KEY=SERPER_API_KEY:latest \
+        --set-env-vars "$FIREBASE_ENV_VARS" \
+        --set-secrets "$SECRETS_CONFIG" \
         --service-account "${SERVICE_ACCOUNT_NAME}@${PROJECT_ID}.iam.gserviceaccount.com" \
         --project=$PROJECT_ID
 fi
@@ -291,7 +352,7 @@ SERVICE_URL=$(gcloud run services describe $SERVICE_NAME --region=$REGION --proj
 
 # Show deployment details
 echo ""
-log_success "🎉 AI Insights Generator deployment complete!"
+log_success "🎉 AI Insights Generator with Firebase Auth deployment complete!"
 echo ""
 echo "📋 Service Details:"
 gcloud run services describe $SERVICE_NAME --region=$REGION --project=$PROJECT_ID --format="table(metadata.name,status.url,status.conditions[0].type,status.conditions[0].status)"
@@ -299,19 +360,32 @@ gcloud run services describe $SERVICE_NAME --region=$REGION --project=$PROJECT_I
 echo ""
 echo "🌐 Service URL: $SERVICE_URL"
 echo ""
-echo "Next steps:"
-echo "1. Update the following secrets with your actual API keys:"
+echo "🔧 Next steps:"
+echo ""
+echo "1. Update AI API secrets with your actual keys:"
 echo "   gcloud secrets versions add OPENAI_API_KEY --data-file=- <<< 'your-actual-openai-key'"
 echo "   gcloud secrets versions add TAVILY_API_KEY --data-file=- <<< 'your-actual-tavily-key'"
 echo "   gcloud secrets versions add SERPER_API_KEY --data-file=- <<< 'your-actual-serper-key'"
 echo ""
-echo "2. Test the service:"
-echo "   curl $SERVICE_URL"
+echo "2. Update Firebase secrets with your actual configuration:"
+echo "   gcloud secrets versions add FIREBASE_WEB_API_KEY --data-file=- <<< 'your-firebase-web-api-key'"
+echo "   gcloud secrets versions add FIREBASE_MESSAGING_SENDER_ID --data-file=- <<< 'your-messaging-sender-id'"
+echo "   gcloud secrets versions add FIREBASE_APP_ID --data-file=- <<< 'your-firebase-app-id'"
+echo "   gcloud secrets versions add FIREBASE_MEASUREMENT_ID --data-file=- <<< 'your-measurement-id'"
 echo ""
-echo "3. Monitor service logs:"
+echo "3. Configure Firebase Authentication:"
+echo "   - Enable Email/Password and Google sign-in in Firebase Console"
+echo "   - Add $SERVICE_URL to authorized domains"
+echo ""
+echo "4. Test the service:"
+echo "   curl $SERVICE_URL"
+echo "   curl $SERVICE_URL/status"
+echo ""
+echo "5. Monitor service logs:"
 echo "   gcloud logging read 'resource.type=\"cloud_run_revision\" AND resource.labels.service_name=\"$SERVICE_NAME\"' --project=$PROJECT_ID --limit=50"
 echo ""
-echo "4. View service details:"
+echo "6. View service details:"
 echo "   gcloud run services describe $SERVICE_NAME --region=$REGION --project=$PROJECT_ID"
 echo ""
-echo "The AI Insights Generator is now running as a Cloud Run service and accessible via the web!" 
+echo "🔥 The AI Insights Generator with Firebase Authentication is now running as a Cloud Run service!"
+echo "📱 Users can now sign up, log in, and share insights with the community!" 

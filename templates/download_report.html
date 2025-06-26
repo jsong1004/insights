@@ -247,14 +247,39 @@
         }
 
         .sources-list a {
-            color: #667eea;
+            color: #3498db;
             text-decoration: none;
             word-break: break-all;
             font-size: 0.95rem;
+            display: inline-block;
+            max-width: 100%;
+            padding: 2px 0;
+            border-bottom: 1px dotted #3498db;
+            transition: all 0.2s ease;
         }
 
         .sources-list a:hover {
-            text-decoration: underline;
+            text-decoration: none;
+            border-bottom: 1px solid #2980b9;
+            color: #2980b9;
+            background-color: rgba(52, 152, 219, 0.1);
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+
+        .sources-list li {
+            margin-bottom: 8px;
+            line-height: 1.6;
+        }
+
+        .source-link {
+            position: relative;
+        }
+
+        .source-link .external-icon {
+            margin-left: 4px;
+            font-size: 0.8rem;
+            opacity: 0.7;
         }
 
         .report-footer {
@@ -401,7 +426,7 @@
                         <div class="content-section">
                             <h4>Detailed Analysis</h4>
                             <div class="detailed-report">
-                                {{ insight.detailed_report|replace('\n', '<br>')|safe }}
+                                {{ insight.detailed_report|replace('\n', '<br>')|linkify_urls|safe }}
                             </div>
                         </div>
 
@@ -409,7 +434,7 @@
                         <div class="content-section">
                             <h4>Why This Matters</h4>
                             <div class="significance-text">
-                                {{ insight.significance }}
+                                {{ insight.significance|linkify_urls|safe }}
                             </div>
                         </div>
 
@@ -420,8 +445,14 @@
                             <ul class="sources-list">
                                 {% for source in insight.sources %}
                                 <li>
-                                    {% if source.startswith('http') %}
-                                        <a href="{{ source }}" target="_blank">{{ source }}</a>
+                                    {% set is_url = source.startswith('http://') or source.startswith('https://') or source.startswith('www.') %}
+                                    {% if is_url %}
+                                        {% set clean_url = source if source.startswith('http') else 'https://' + source %}
+                                        {% set display_url = source[:80] + '...' if source|length > 80 else source %}
+                                        <a href="{{ clean_url }}" target="_blank" rel="noopener noreferrer" class="source-link" title="{{ source }}">
+                                            {{ display_url }}
+                                            <span class="external-icon">↗</span>
+                                        </a>
                                     {% else %}
                                         {{ source }}
                                     {% endif %}
