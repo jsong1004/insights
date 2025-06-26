@@ -47,6 +47,7 @@ yarn.lock
 package-lock.json
 
 # Build
+lib/
 build/
 dist/
 *.egg
