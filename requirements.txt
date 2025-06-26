@@ -1,5 +1,5 @@
 # AI Insights Generator - Requirements
-# Updated for 2025 with latest stable versions
+# Updated for 2025 with latest stable versions and corrected package names
 
 # Core Web Framework
 Flask==3.1.1
@@ -16,7 +16,6 @@ litellm==1.72.0
 # Search & Research Tools
 tavily-python==0.5.0
 google-search-results==2.4.2
-serper==0.1.4
 
 # Data Processing & Validation
 pydantic==2.11.4
@@ -29,17 +28,11 @@ google-cloud-firestore==2.19.0
 firebase-admin==6.5.0
 
 # Utilities
-uuid==1.30
 typing-extensions==4.12.2
 
 # Development & Testing (optional)
 pytest==8.4.0
 flask-testing==0.8.1
 
-# Production Deployment (optional)
-gunicorn==23.0.0
-waitress==3.0.2
-
-# Security & Performance
-cryptography==44.0.3
-cachetools==5.5.2 
+# Production Server
+gunicorn==23.0.0 
