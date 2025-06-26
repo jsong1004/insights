@@ -1,0 +1,329 @@
+{% extends "base.html" %}
+
+{% block title %}AI Insights - {{ insights.topic }}{% endblock %}
+
+{% block content %}
+<!-- Insights Header -->
+<div class="d-flex justify-content-between align-items-start mb-4">
+    <div>
+        <h1 class="display-6 fw-bold text-dark mb-2">
+            <i class="fas fa-lightbulb text-primary me-3"></i>{{ insights.topic }}
+        </h1>
+                 <div class="d-flex flex-wrap gap-3 mb-3">
+             <span class="badge bg-primary fs-6">
+                 <i class="fas fa-brain me-1"></i>{{ insights.total_insights }} Insights
+             </span>
+             <span class="badge bg-success fs-6">
+                 <i class="fas fa-coins me-1"></i>{{ "{:,}".format(insights.total_tokens) }} Tokens
+             </span>
+             <span class="badge bg-info fs-6">
+                 <i class="fas fa-calendar me-1"></i>{{ insights.timestamp[:16] }}
+             </span>
+         </div>
+    </div>
+    
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('index') }}" class="btn btn-outline-primary">
+            <i class="fas fa-plus me-1"></i>New Research
+        </a>
+        <form method="POST" action="{{ url_for('delete_insights', insight_id=insights.id) }}" class="d-inline">
+            <button type="submit" class="btn btn-outline-danger" 
+                    onclick="return confirm('Are you sure you want to delete these insights?')">
+                <i class="fas fa-trash me-1"></i>Delete
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- User Instructions (if provided) -->
+{% if insights.instructions %}
+<div class="insight-card border-info">
+    <h3 class="insight-title text-info">
+        <i class="fas fa-clipboard-list me-2"></i>Research Instructions
+    </h3>
+    <p class="mb-0 text-muted">{{ insights.instructions }}</p>
+</div>
+{% endif %}
+
+<!-- Generated Insights -->
+{% if insights.insights %}
+    {% for insight in insights.insights %}
+    <div class="insight-card">
+        <div class="d-flex justify-content-between align-items-start mb-3">
+            <h2 class="insight-title mb-0">{{ insight.title }}</h2>
+            <span class="confidence-badge">
+                {{ "%.0f"|format(insight.confidence_score * 100) }}% Confidence
+            </span>
+        </div>
+        
+        <div class="mb-4">
+            <p class="lead">{{ insight.summary }}</p>
+        </div>
+        
+        <!-- Key Points -->
+        {% if insight.key_points %}
+        <div class="mb-4">
+            <h5 class="fw-bold text-dark mb-3">
+                <i class="fas fa-list-ul text-primary me-2"></i>Key Points
+            </h5>
+            <ul class="list-group list-group-flush">
+                {% for point in insight.key_points %}
+                <li class="list-group-item border-0 px-0 py-2">
+                    <i class="fas fa-chevron-right text-primary me-2"></i>{{ point }}
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+        
+        <!-- Detailed Report -->
+        {% if insight.detailed_report %}
+        <div class="mb-4">
+            <h5 class="fw-bold text-dark mb-3">
+                <i class="fas fa-file-alt text-primary me-2"></i>Detailed Analysis
+            </h5>
+            <div class="detailed-report-container">
+                <div class="detailed-report-preview bg-light p-3 rounded-3 border">
+                    <div class="detailed-report-content">
+                        {{ insight.detailed_report[:200] }}{% if insight.detailed_report|length > 200 %}...{% endif %}
+                    </div>
+                    {% if insight.detailed_report|length > 200 %}
+                    <div class="mt-3">
+                        <button class="btn btn-outline-primary btn-sm read-more-btn" data-bs-toggle="collapse" 
+                                data-bs-target="#detailed-report-{{ loop.index }}" aria-expanded="false">
+                            <i class="fas fa-chevron-down me-1"></i>Read More
+                        </button>
+                    </div>
+                    <div class="collapse mt-3" id="detailed-report-{{ loop.index }}">
+                        <div class="detailed-report-full">
+                            {{ insight.detailed_report[200:] }}
+                        </div>
+                        <div class="mt-3">
+                            <button class="btn btn-outline-secondary btn-sm read-less-btn" data-bs-toggle="collapse" 
+                                    data-bs-target="#detailed-report-{{ loop.index }}" aria-expanded="true">
+                                <i class="fas fa-chevron-up me-1"></i>Read Less
+                            </button>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Significance -->
+        {% if insight.significance %}
+        <div class="mb-4">
+            <div class="bg-light p-3 rounded-3 border-start border-primary border-4">
+                <h6 class="fw-bold text-primary mb-2">
+                    <i class="fas fa-exclamation-circle me-2"></i>Why This Matters
+                </h6>
+                <p class="mb-0">{{ insight.significance }}</p>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Sources -->
+        {% if insight.sources %}
+        <div class="mb-4">
+            <h6 class="fw-bold text-dark mb-3">
+                <i class="fas fa-external-link-alt text-primary me-2"></i>Sources
+            </h6>
+            <div class="row">
+                {% for source in insight.sources %}
+                <div class="col-md-6 mb-2">
+                    <a href="{{ source }}" target="_blank" class="source-link d-block p-2 bg-light rounded">
+                        <i class="fas fa-link me-2"></i>{{ source|truncate(60) }}
+                    </a>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Research Quality -->
+        {% if insight.research_quality %}
+        <div class="border-top pt-3">
+            <small class="text-muted">
+                <i class="fas fa-chart-bar me-1"></i>
+                <strong>Research Quality:</strong> {{ insight.research_quality }}
+            </small>
+        </div>
+        {% endif %}
+    </div>
+    {% endfor %}
+{% else %}
+    <!-- Fallback for agent notes if no structured insights -->
+    {% if insights.agent_notes %}
+    <div class="insight-card">
+        <h2 class="insight-title">
+            <i class="fas fa-robot text-primary me-2"></i>AI Agent Analysis
+        </h2>
+        <div class="bg-light p-4 rounded-3">
+            <pre class="mb-0" style="white-space: pre-wrap; font-family: inherit;">{{ insights.agent_notes }}</pre>
+        </div>
+    </div>
+    {% endif %}
+{% endif %}
+
+<!-- Processing Information -->
+<div class="insight-card bg-light">
+    <h3 class="insight-title">
+        <i class="fas fa-info-circle text-primary me-2"></i>Processing Information
+    </h3>
+    
+    <div class="row">
+        <div class="col-md-6">
+            <h6 class="fw-bold">Research Topic</h6>
+            <p class="text-muted">{{ insights.topic }}</p>
+            
+            {% if insights.instructions %}
+            <h6 class="fw-bold">Instructions Provided</h6>
+            <p class="text-muted">{{ insights.instructions|truncate(150) }}</p>
+            {% endif %}
+        </div>
+        
+        <div class="col-md-6">
+            <h6 class="fw-bold">Processing Details</h6>
+            <ul class="list-unstyled text-muted">
+                <li><i class="fas fa-clock me-2"></i>Processing Time: {{ "%.1f"|format(insights.processing_time) }} seconds</li>
+                <li><i class="fas fa-calendar me-2"></i>Generated: {{ insights.timestamp[:19] }}</li>
+                <li><i class="fas fa-brain me-2"></i>Total Insights: {{ insights.total_insights }}</li>
+                <li><i class="fas fa-coins me-2"></i>Total Tokens: {{ "{:,}".format(insights.total_tokens) }}</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- Action Buttons -->
+<div class="text-center mt-4">
+    <a href="{{ url_for('index') }}" class="btn btn-primary btn-lg me-3">
+        <i class="fas fa-plus me-2"></i>Generate New Insights
+    </a>
+    <a href="{{ url_for('download_insights', insight_id=insights.id) }}" class="btn btn-outline-success btn-lg">
+        <i class="fas fa-download me-2"></i>Download Report
+    </a>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<style>
+    .detailed-report-container {
+        position: relative;
+    }
+    
+    .detailed-report-preview {
+        transition: all 0.3s ease;
+    }
+    
+    .detailed-report-content {
+        line-height: 1.6;
+        text-align: justify;
+    }
+    
+    .detailed-report-full {
+        line-height: 1.6;
+        text-align: justify;
+        animation: fadeIn 0.3s ease-in;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+    
+    .read-more-btn, .read-less-btn {
+        transition: all 0.2s ease;
+    }
+    
+    .read-more-btn:hover, .read-less-btn:hover {
+        transform: translateY(-1px);
+    }
+    
+    .detailed-report-preview:hover {
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    
+    @media print {
+        .detailed-report-preview {
+            background: white !important;
+            border: 1px solid #ddd !important;
+        }
+        .read-more-btn, .read-less-btn {
+            display: none !important;
+        }
+        .collapse {
+            display: block !important;
+        }
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Enhanced read more/less functionality
+        document.querySelectorAll('.read-more-btn, .read-less-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const icon = this.querySelector('i');
+                const text = this.querySelector('.btn-text') || this;
+                
+                // Toggle icon animation
+                if (icon.classList.contains('fa-chevron-down')) {
+                    setTimeout(() => {
+                        icon.classList.remove('fa-chevron-down');
+                        icon.classList.add('fa-chevron-up');
+                    }, 150);
+                } else {
+                    setTimeout(() => {
+                        icon.classList.remove('fa-chevron-up');
+                        icon.classList.add('fa-chevron-down');
+                    }, 150);
+                }
+            });
+        });
+        
+        // Smooth scrolling for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.querySelector(this.getAttribute('href')).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
+        
+        // Copy to clipboard functionality for sources
+        document.querySelectorAll('.source-link').forEach(link => {
+            link.addEventListener('click', function(e) {
+                if (e.ctrlKey || e.metaKey) {
+                    e.preventDefault();
+                    navigator.clipboard.writeText(this.href).then(() => {
+                        // Show temporary feedback
+                        const originalText = this.innerHTML;
+                        this.innerHTML = '<i class="fas fa-check me-2"></i>Copied!';
+                        this.classList.add('text-success');
+                        
+                        setTimeout(() => {
+                            this.innerHTML = originalText;
+                            this.classList.remove('text-success');
+                        }, 1500);
+                    });
+                }
+            });
+        });
+        
+        // Print styles
+        const printStyles = `
+            @media print {
+                .sidebar, .navbar, .btn, form { display: none !important; }
+                .main-container { margin: 0 !important; box-shadow: none !important; }
+                .insight-card { break-inside: avoid; margin-bottom: 1rem !important; }
+                .confidence-badge { background: #000 !important; }
+            }
+        `;
+        
+        const styleSheet = document.createElement('style');
+        styleSheet.textContent = printStyles;
+        document.head.appendChild(styleSheet);
+    });
+</script>
+{% endblock %} 

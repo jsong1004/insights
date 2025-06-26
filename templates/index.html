@@ -1,0 +1,257 @@
+{% extends "base.html" %}
+
+{% block title %}AI Insights Generator - Home{% endblock %}
+
+{% block content %}
+<div class="text-center mb-4">
+    <h1 class="display-6 fw-bold text-dark mb-3">
+        <i class="fas fa-brain text-primary me-3"></i>AI Insights Generator
+    </h1>
+    <p class="lead text-muted">
+        Powered by CrewAI Multi-Agent System for intelligent research and analysis
+    </p>
+</div>
+
+<!-- Insights Generation Form -->
+<div class="insight-card">
+    <h2 class="insight-title">
+        <i class="fas fa-plus-circle text-primary me-2"></i>Generate New Insights
+    </h2>
+    
+    <form method="POST" action="{{ url_for('generate_insights') }}" data-loading>
+        <div class="row">
+            <div class="col-12 mb-4">
+                <label for="topic" class="form-label fw-semibold">
+                    <i class="fas fa-search me-2"></i>Research Topic
+                </label>
+                <input type="text" 
+                       class="form-control form-control-lg" 
+                       id="topic" 
+                       name="topic" 
+                       placeholder="e.g., Artificial Intelligence in Healthcare, Climate Change Solutions, Quantum Computing..."
+                       required
+                       maxlength="200">
+                <div class="form-text">
+                    Enter the main topic you want our AI agents to research and analyze
+                </div>
+            </div>
+            
+            <div class="col-12 mb-4">
+                <label for="instructions" class="form-label fw-semibold">
+                    <i class="fas fa-clipboard-list me-2"></i>Specific Instructions (Optional)
+                </label>
+                <textarea class="form-control" 
+                          id="instructions" 
+                          name="instructions" 
+                          rows="4"
+                          placeholder="Provide specific guidance for the research:&#10;&#10;• Focus on recent developments (2023-2024)&#10;• Include market analysis and trends&#10;• Compare different approaches or solutions&#10;• Analyze potential risks and opportunities&#10;• Look for expert opinions and case studies&#10;&#10;The more specific your instructions, the better our AI agents can tailor the research to your needs."
+                          maxlength="1000"></textarea>
+                <div class="form-text">
+                    Optional: Provide specific instructions to guide the AI agents' research approach
+                </div>
+            </div>
+        </div>
+        
+        <div class="d-grid">
+            <button type="submit" class="btn btn-primary btn-lg">
+                <span class="btn-text">
+                    <i class="fas fa-rocket me-2"></i>Generate Insights
+                </span>
+                <span class="loading-spinner">
+                    <i class="fas fa-spinner fa-spin me-2"></i>Generating Insights...
+                </span>
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- How It Works Section -->
+<div class="insight-card">
+    <h3 class="insight-title">
+        <i class="fas fa-cogs text-primary me-2"></i>How It Works
+    </h3>
+    
+    <div class="row">
+        <div class="col-md-6 col-lg-3 mb-4">
+            <div class="text-center">
+                <div class="bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" 
+                     style="width: 60px; height: 60px;">
+                    <i class="fas fa-search fa-lg"></i>
+                </div>
+                <h5 class="fw-bold">1. Research</h5>
+                <p class="text-muted small">
+                    AI Research Agent searches for comprehensive, up-to-date information on your topic
+                </p>
+            </div>
+        </div>
+        
+        <div class="col-md-6 col-lg-3 mb-4">
+            <div class="text-center">
+                <div class="bg-success text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" 
+                     style="width: 60px; height: 60px;">
+                    <i class="fas fa-shield-alt fa-lg"></i>
+                </div>
+                <h5 class="fw-bold">2. Validate</h5>
+                <p class="text-muted small">
+                    Validation Agent checks source credibility and assigns confidence scores
+                </p>
+            </div>
+        </div>
+        
+        <div class="col-md-6 col-lg-3 mb-4">
+            <div class="text-center">
+                <div class="bg-warning text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" 
+                     style="width: 60px; height: 60px;">
+                    <i class="fas fa-lightbulb fa-lg"></i>
+                </div>
+                <h5 class="fw-bold">3. Analyze</h5>
+                <p class="text-muted small">
+                    Insights Agent creates meaningful analysis and actionable intelligence
+                </p>
+            </div>
+        </div>
+        
+        <div class="col-md-6 col-lg-3 mb-4">
+            <div class="text-center">
+                <div class="bg-info text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" 
+                     style="width: 60px; height: 60px;">
+                    <i class="fas fa-chart-line fa-lg"></i>
+                </div>
+                <h5 class="fw-bold">4. Present</h5>
+                <p class="text-muted small">
+                    Structured insights with sources, confidence scores, and practical applications
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Example Topics -->
+<div class="insight-card">
+    <h3 class="insight-title">
+        <i class="fas fa-star text-primary me-2"></i>Example Topics
+    </h3>
+    
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <h6 class="fw-semibold text-primary">Technology & Innovation</h6>
+            <ul class="list-unstyled small text-muted">
+                <li><i class="fas fa-chevron-right me-2"></i>Artificial Intelligence in Healthcare</li>
+                <li><i class="fas fa-chevron-right me-2"></i>Quantum Computing Applications</li>
+                <li><i class="fas fa-chevron-right me-2"></i>Blockchain in Supply Chain</li>
+                <li><i class="fas fa-chevron-right me-2"></i>5G Network Implementation</li>
+            </ul>
+        </div>
+        
+        <div class="col-md-6 mb-3">
+            <h6 class="fw-semibold text-success">Business & Market</h6>
+            <ul class="list-unstyled small text-muted">
+                <li><i class="fas fa-chevron-right me-2"></i>Remote Work Trends 2024</li>
+                <li><i class="fas fa-chevron-right me-2"></i>Sustainable Business Practices</li>
+                <li><i class="fas fa-chevron-right me-2"></i>E-commerce Market Analysis</li>
+                <li><i class="fas fa-chevron-right me-2"></i>Startup Funding Landscape</li>
+            </ul>
+        </div>
+        
+        <div class="col-md-6 mb-3">
+            <h6 class="fw-semibold text-warning">Science & Environment</h6>
+            <ul class="list-unstyled small text-muted">
+                <li><i class="fas fa-chevron-right me-2"></i>Climate Change Solutions</li>
+                <li><i class="fas fa-chevron-right me-2"></i>Renewable Energy Innovations</li>
+                <li><i class="fas fa-chevron-right me-2"></i>Space Exploration Progress</li>
+                <li><i class="fas fa-chevron-right me-2"></i>Biotechnology Advances</li>
+            </ul>
+        </div>
+        
+        <div class="col-md-6 mb-3">
+            <h6 class="fw-semibold text-info">Society & Culture</h6>
+            <ul class="list-unstyled small text-muted">
+                <li><i class="fas fa-chevron-right me-2"></i>Digital Privacy Rights</li>
+                <li><i class="fas fa-chevron-right me-2"></i>Future of Education</li>
+                <li><i class="fas fa-chevron-right me-2"></i>Social Media Impact</li>
+                <li><i class="fas fa-chevron-right me-2"></i>Mental Health Awareness</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Start Guide -->
+{% if not insights_list %}
+<div class="insight-card border-primary">
+    <h3 class="insight-title text-primary">
+        <i class="fas fa-play-circle me-2"></i>Quick Start Guide
+    </h3>
+    
+    <div class="row align-items-center">
+        <div class="col-md-8">
+            <ol class="mb-0">
+                <li class="mb-2">
+                    <strong>Enter a topic</strong> you want to research (e.g., "AI in Healthcare")
+                </li>
+                <li class="mb-2">
+                    <strong>Add specific instructions</strong> to guide the research (optional but recommended)
+                </li>
+                <li class="mb-2">
+                    <strong>Click "Generate Insights"</strong> and wait for our AI agents to work
+                </li>
+                <li class="mb-0">
+                    <strong>Review the results</strong> with validated sources and confidence scores
+                </li>
+            </ol>
+        </div>
+        <div class="col-md-4 text-center">
+            <i class="fas fa-rocket fa-4x text-primary opacity-75"></i>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Character counters for form fields
+    document.addEventListener('DOMContentLoaded', function() {
+        const topicInput = document.getElementById('topic');
+        const instructionsTextarea = document.getElementById('instructions');
+        
+        // Add character counters
+        function addCharacterCounter(element, maxLength) {
+            const counter = document.createElement('div');
+            counter.className = 'form-text text-end';
+            counter.style.fontSize = '0.75rem';
+            element.parentNode.appendChild(counter);
+            
+            function updateCounter() {
+                const remaining = maxLength - element.value.length;
+                counter.textContent = `${element.value.length}/${maxLength} characters`;
+                counter.className = remaining < 20 ? 'form-text text-end text-warning' : 'form-text text-end text-muted';
+            }
+            
+            element.addEventListener('input', updateCounter);
+            updateCounter();
+        }
+        
+        if (topicInput) addCharacterCounter(topicInput, 200);
+        if (instructionsTextarea) addCharacterCounter(instructionsTextarea, 1000);
+        
+        // Auto-resize textarea
+        if (instructionsTextarea) {
+            instructionsTextarea.addEventListener('input', function() {
+                this.style.height = 'auto';
+                this.style.height = this.scrollHeight + 'px';
+            });
+        }
+        
+        // Example topic click handlers
+        document.querySelectorAll('.list-unstyled li').forEach(function(item) {
+            item.style.cursor = 'pointer';
+            item.addEventListener('click', function() {
+                const topicText = this.textContent.replace(/^\s*\S+\s*/, ''); // Remove the chevron icon
+                topicInput.value = topicText.trim();
+                topicInput.focus();
+                topicInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            });
+        });
+    });
+</script>
+{% endblock %} 

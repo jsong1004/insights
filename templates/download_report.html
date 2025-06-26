@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Insights Report - {{ insights.topic }}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+            line-height: 1.7;
+            color: #2c3e50;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .report-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .report-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px 50px;
+            text-align: center;
+        }
+
+        .report-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .report-subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            font-weight: 300;
+        }
+
+        .report-meta {
+            background: #f8f9fa;
+            padding: 30px 50px;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .meta-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .meta-item {
+            text-align: center;
+        }
+
+        .meta-label {
+            font-size: 0.9rem;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 5px;
+        }
+
+        .meta-value {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .report-content {
+            padding: 50px;
+        }
+
+        .instructions-section {
+            background: #e3f2fd;
+            border-left: 5px solid #2196f3;
+            padding: 25px;
+            margin-bottom: 40px;
+            border-radius: 0 10px 10px 0;
+        }
+
+        .instructions-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #1976d2;
+            margin-bottom: 15px;
+        }
+
+        .instructions-text {
+            color: #424242;
+            font-style: italic;
+        }
+
+        .insights-section {
+            margin-bottom: 40px;
+        }
+
+        .section-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 30px;
+            text-align: center;
+            position: relative;
+        }
+
+        .section-title::after {
+            content: '';
+            display: block;
+            width: 80px;
+            height: 4px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 15px auto;
+            border-radius: 2px;
+        }
+
+        .insight-card {
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 15px;
+            margin-bottom: 40px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            transition: transform 0.3s ease;
+        }
+
+        .insight-header {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            padding: 25px 30px;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .insight-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .insight-meta {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .confidence-badge {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .quality-badge {
+            background: linear-gradient(135deg, #17a2b8 0%, #6f42c1 100%);
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .insight-content {
+            padding: 30px;
+        }
+
+        .content-section {
+            margin-bottom: 30px;
+        }
+
+        .content-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .content-section h4 {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .summary-text {
+            font-size: 1.05rem;
+            color: #495057;
+            line-height: 1.8;
+        }
+
+        .key-points {
+            list-style: none;
+        }
+
+        .key-points li {
+            position: relative;
+            padding-left: 25px;
+            margin-bottom: 12px;
+            color: #495057;
+        }
+
+        .key-points li::before {
+            content: '▶';
+            position: absolute;
+            left: 0;
+            color: #667eea;
+            font-weight: bold;
+        }
+
+        .detailed-report {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+            font-size: 1rem;
+            line-height: 1.8;
+            color: #495057;
+        }
+
+        .significance-text {
+            background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #ffc107;
+            font-size: 1.05rem;
+            color: #856404;
+        }
+
+        .sources-list {
+            list-style: none;
+        }
+
+        .sources-list li {
+            margin-bottom: 8px;
+        }
+
+        .sources-list a {
+            color: #667eea;
+            text-decoration: none;
+            word-break: break-all;
+            font-size: 0.95rem;
+        }
+
+        .sources-list a:hover {
+            text-decoration: underline;
+        }
+
+        .report-footer {
+            background: #2c3e50;
+            color: white;
+            text-align: center;
+            padding: 30px;
+            font-size: 0.9rem;
+        }
+
+        .footer-text {
+            opacity: 0.8;
+        }
+
+        .generated-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 25px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-top: 15px;
+        }
+
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+            }
+            
+            .report-container {
+                box-shadow: none;
+                border-radius: 0;
+            }
+            
+            .insight-card {
+                page-break-inside: avoid;
+                box-shadow: none;
+                border: 1px solid #ddd;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .report-header {
+                padding: 30px 25px;
+            }
+            
+            .report-title {
+                font-size: 2rem;
+            }
+            
+            .report-content {
+                padding: 30px 25px;
+            }
+            
+            .insight-content {
+                padding: 20px;
+            }
+            
+            .meta-grid {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="report-container">
+        <!-- Header -->
+        <div class="report-header">
+            <h1 class="report-title">AI Insights Report</h1>
+            <p class="report-subtitle">{{ insights.topic }}</p>
+        </div>
+
+        <!-- Meta Information -->
+        <div class="report-meta">
+            <div class="meta-grid">
+                <div class="meta-item">
+                    <div class="meta-label">Generated</div>
+                    <div class="meta-value">{{ insights.timestamp[:19].replace('T', ' ') }}</div>
+                </div>
+                <div class="meta-item">
+                    <div class="meta-label">Total Insights</div>
+                    <div class="meta-value">{{ insights.total_insights }}</div>
+                </div>
+                <div class="meta-item">
+                    <div class="meta-label">Processing Time</div>
+                    <div class="meta-value">{{ "%.1f"|format(insights.processing_time) }}s</div>
+                </div>
+                <div class="meta-item">
+                    <div class="meta-label">Tokens Used</div>
+                    <div class="meta-value">{{ "{:,}".format(insights.total_tokens) }}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Content -->
+        <div class="report-content">
+            <!-- Instructions Section -->
+            {% if insights.instructions %}
+            <div class="instructions-section">
+                <h3 class="instructions-title">Research Instructions</h3>
+                <p class="instructions-text">{{ insights.instructions }}</p>
+            </div>
+            {% endif %}
+
+            <!-- Insights Section -->
+            <div class="insights-section">
+                <h2 class="section-title">Generated Insights</h2>
+                
+                {% for insight in insights.insights %}
+                <div class="insight-card">
+                    <div class="insight-header">
+                        <h3 class="insight-title">{{ insight.title }}</h3>
+                        <div class="insight-meta">
+                            <span class="confidence-badge">
+                                Confidence: {{ (insight.confidence_score * 100)|round|int }}%
+                            </span>
+                            <span class="quality-badge">
+                                Quality: {{ insight.research_quality }}
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <div class="insight-content">
+                        <!-- Summary -->
+                        <div class="content-section">
+                            <h4>Executive Summary</h4>
+                            <p class="summary-text">{{ insight.summary }}</p>
+                        </div>
+
+                        <!-- Key Points -->
+                        <div class="content-section">
+                            <h4>Key Points</h4>
+                            <ul class="key-points">
+                                {% for point in insight.key_points %}
+                                <li>{{ point }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+
+                        <!-- Detailed Report -->
+                        <div class="content-section">
+                            <h4>Detailed Analysis</h4>
+                            <div class="detailed-report">
+                                {{ insight.detailed_report|replace('\n', '<br>')|safe }}
+                            </div>
+                        </div>
+
+                        <!-- Significance -->
+                        <div class="content-section">
+                            <h4>Why This Matters</h4>
+                            <div class="significance-text">
+                                {{ insight.significance }}
+                            </div>
+                        </div>
+
+                        <!-- Sources -->
+                        {% if insight.sources %}
+                        <div class="content-section">
+                            <h4>Sources & References</h4>
+                            <ul class="sources-list">
+                                {% for source in insight.sources %}
+                                <li>
+                                    {% if source.startswith('http') %}
+                                        <a href="{{ source }}" target="_blank">{{ source }}</a>
+                                    {% else %}
+                                        {{ source }}
+                                    {% endif %}
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="report-footer">
+            <p class="footer-text">
+                This report was generated using AI-powered research and analysis tools.
+            </p>
+            <span class="generated-badge">
+                Powered by AI Insights Generator
+            </span>
+        </div>
+    </div>
+</body>
+</html> 

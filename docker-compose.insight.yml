@@ -1,0 +1,63 @@
+version: '3.8'
+
+services:
+  ai-insights-app:
+    build:
+      context: .
+      dockerfile: Dockerfile.insight
+    container_name: ai-insights-generator
+    ports:
+      - "5000:5000"
+    environment:
+      # Flask Configuration
+      - FLASK_ENV=production
+      - FLASK_APP=app.py
+      - FLASK_SECRET_KEY=${FLASK_SECRET_KEY:-your-secret-key-change-this}
+      
+      # Required API Keys (set these in your .env file)
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - TAVILY_API_KEY=${TAVILY_API_KEY}
+      - SERPER_API_KEY=${SERPER_API_KEY}
+      
+      # Optional: Google Cloud Configuration
+      - GOOGLE_CLOUD_PROJECT=${GOOGLE_CLOUD_PROJECT:-}
+      
+    env_file:
+      - .env
+    volumes:
+      # Mount logs directory for persistence
+      - ./logs:/app/logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:5000/api/insights', timeout=10)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.ai-insights.rule=Host(`insights.yourdomain.com`)"
+      - "traefik.http.routers.ai-insights.tls=true"
+      - "traefik.http.routers.ai-insights.tls.certresolver=letsencrypt"
+
+# Optional: Add a reverse proxy (uncomment if needed)
+# nginx:
+#   image: nginx:alpine
+#   container_name: ai-insights-nginx
+#   ports:
+#     - "80:80"
+#     - "443:443"
+#   volumes:
+#     - ./nginx.conf:/etc/nginx/nginx.conf:ro
+#     - ./ssl:/etc/nginx/ssl:ro
+#   depends_on:
+#     - ai-insights-app
+#   restart: unless-stopped
+
+volumes:
+  logs:
+    driver: local
+
+networks:
+  default:
+    name: ai-insights-network 
