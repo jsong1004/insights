@@ -39,6 +39,7 @@ def api_login():
         session['user_id'] = decoded_token['uid']
         session['user_email'] = decoded_token.get('email')
         session['email_verified'] = decoded_token.get('email_verified', False)
+        session['last_activity'] = datetime.utcnow()
         session.permanent = True
         
         logger.info(f"User login successful: {decoded_token['uid']}")
@@ -84,6 +85,7 @@ def api_signup():
         session['user_id'] = decoded_token['uid']
         session['user_email'] = decoded_token.get('email')
         session['email_verified'] = decoded_token.get('email_verified', False)
+        session['last_activity'] = datetime.utcnow()
         session.permanent = True
         
         logger.info(f"New user signup: {decoded_token['uid']}")
@@ -135,7 +137,7 @@ def api_logout():
     user_id = session.get('user_id')
     session.clear()
     logger.info(f"User logout: {user_id}")
-    return jsonify({'success': True})
+    return redirect(url_for('auth.login'))
 
 @auth_bp.route('/api/user', methods=['GET'])
 def get_current_user():

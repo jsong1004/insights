@@ -86,30 +86,21 @@ def test_flask_app():
     print("\n🌐 Testing Flask App Initialization...")
     
     try:
-        from app import app, get_api_keys, AIInsightsCrew
-        print("✅ Flask app imported successfully")
+        from app import create_app
+        app = create_app()
+        print("✅ Flask app created successfully")
         
-        # Test API keys function
-        tavily_key, serper_key, openai_key = get_api_keys()
-        
-        if not openai_key:
-            print("❌ OpenAI API key not found")
+        # Test if the app has the expected extensions
+        if not app.extensions.get('firebase_auth'):
+            print("❌ Firebase Auth not initialized")
             return False
-        
-        if not tavily_key and not serper_key:
-            print("❌ No search API keys found")
+        print("✅ Firebase Auth initialized")
+
+        if not app.extensions.get('firestore_manager'):
+            print("❌ Firestore Manager not initialized")
             return False
-        
-        print("✅ API keys configuration is valid")
-        
-        # Test CrewAI initialization
-        try:
-            crew_system = AIInsightsCrew(tavily_key, serper_key, openai_key)
-            print("✅ CrewAI system initialized successfully")
-        except Exception as e:
-            print(f"❌ CrewAI initialization failed: {e}")
-            return False
-        
+        print("✅ Firestore Manager initialized")
+
         print("✅ Flask app is ready to run!")
         return True
         

@@ -1,0 +1,26 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Deny all access by default
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Users can only manage their own documents
+    match /users/{userId} {
+      allow read, update, delete: if request.auth != null && request.auth.uid == userId;
+      allow create: if request.auth != null;
+    }
+
+    // Insights can be created by any authenticated user
+    match /insights/{insightId} {
+      allow create: if request.auth != null;
+
+      // The author can read, update, and delete their own insights
+      allow read, update, delete: if request.auth != null && request.auth.uid == resource.data.author_id;
+
+      // Any authenticated user can read a shared insight
+      allow read: if request.auth != null && resource.data.is_shared == true;
+    }
+  }
+}
