@@ -73,6 +73,43 @@ def api_shared_insights():
     insights_list = insights_firestore_manager.get_shared_insights()
     return jsonify([insights.model_dump() for insights in insights_list])
 
+@api_bp.route('/my-insights')
+@login_required
+def api_my_insights():
+    """API endpoint to get current user's insights"""
+    try:
+        user_id = session.get('user_id')
+        if not user_id:
+            return jsonify({'error': 'Authentication required'}), 401
+        
+        insights_list = insights_firestore_manager.get_user_insights(user_id)
+        
+        # Transform the data for the table
+        insights_data = []
+        for insight in insights_list:
+            insights_data.append({
+                'id': insight.id,
+                'title': insight.topic,
+                'tokens': insight.total_tokens,
+                'date': insight.timestamp,
+                'processing_time': insight.processing_time,
+                'total_insights': insight.total_insights,
+                'is_shared': insight.is_shared,
+                'likes': insight.likes
+            })
+        
+        return jsonify({
+            'success': True,
+            'insights': insights_data
+        })
+        
+    except Exception as e:
+        logger.error(f"Error getting user insights: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Failed to retrieve user insights'
+        }), 500
+
 @api_bp.route('/usage-stats')
 @login_required
 def get_usage_stats():

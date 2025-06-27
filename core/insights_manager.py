@@ -191,6 +191,50 @@ class FirestoreManager:
                 return True
             return False
 
+    def get_user_insights(self, user_id: str) -> List[GeneratedInsights]:
+        """Get all insights for a specific user"""
+        user_insights = []
+        
+        try:
+            if self.use_firestore and self.db:
+                docs = self.db.collection(FIRESTORE_COLLECTION)\
+                    .where('author_id', '==', user_id)\
+                    .order_by('created_at', direction=firestore.Query.DESCENDING)\
+                    .stream()
+                
+                for doc in docs:
+                    try:
+                        data = doc.to_dict()
+                        data.pop('created_at', None)
+                        data.pop('updated_at', None)
+                        
+                        insights = GeneratedInsights(**data)
+                        user_insights.append(insights)
+                        insights_storage[insights.id] = insights
+                        
+                    except Exception as e:
+                        logger.warning(f"Error parsing user insight document {doc.id}: {e}")
+                        continue
+            
+            # Also check in-memory storage for user insights
+            for insight_id, insights in insights_storage.items():
+                if (insights.author_id == user_id and 
+                    not any(i.id == insight_id for i in user_insights)):
+                    user_insights.append(insights)
+            
+            # Sort by timestamp (most recent first)
+            user_insights.sort(key=lambda x: x.timestamp, reverse=True)
+            
+            return user_insights
+            
+        except Exception as e:
+            logger.error(f"Error retrieving user insights: {e}")
+            # Fallback to in-memory storage
+            user_insights = [insights for insights in insights_storage.values() 
+                           if insights.author_id == user_id]
+            user_insights.sort(key=lambda x: x.timestamp, reverse=True)
+            return user_insights
+
     def get_shared_insights(self) -> List[GeneratedInsights]:
         """Get all publicly shared insights"""
         all_insights = []

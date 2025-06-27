@@ -193,21 +193,46 @@
         </div>
     </div>
     
-    <!-- Recent Activity (Placeholder) -->
+    <!-- My Insights Table -->
     <div class="row mt-4">
         <div class="col-12">
             <div class="card shadow-sm">
                 <div class="card-body">
                     <h5 class="card-title">
-                        <i class="fas fa-history text-secondary me-2"></i>
-                        Recent Activity
+                        <i class="fas fa-brain text-primary me-2"></i>
+                        My Insights
                     </h5>
                     
-                    <div class="activity-list">
-                        <p class="text-muted text-center py-4">
-                            <i class="fas fa-clock fa-2x mb-3 d-block"></i>
-                            No recent activity to display
-                        </p>
+                    <div class="table-responsive">
+                        <table id="insights-table" class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="sortable" data-column="title">
+                                        Title 
+                                        <i class="fas fa-sort ms-1"></i>
+                                    </th>
+                                    <th class="sortable" data-column="tokens">
+                                        Tokens 
+                                        <i class="fas fa-sort ms-1"></i>
+                                    </th>
+                                    <th class="sortable" data-column="date">
+                                        Date 
+                                        <i class="fas fa-sort ms-1"></i>
+                                    </th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="insights-table-body">
+                                <tr>
+                                    <td colspan="4" class="text-center py-4">
+                                        <div class="spinner-border text-primary" role="status">
+                                            <span class="visually-hidden">Loading...</span>
+                                        </div>
+                                        <div class="mt-2">Loading your insights...</div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
@@ -274,8 +299,8 @@ async function loadDashboardAnalytics() {
             // Update smart notifications
             updateSmartNotifications(analytics);
             
-            // Update recent activities
-            updateRecentActivities(analytics.recent_activities);
+            // Load my insights table
+            loadMyInsights();
             
         } else {
             throw new Error(data.error || 'Failed to load analytics');
@@ -503,80 +528,206 @@ function generateMonthlyTrendHTML(trend) {
     `;
 }
 
-function updateRecentActivities(activities) {
-    const container = document.querySelector('.activity-list');
+// My Insights Table Variables
+let insightsData = [];
+let sortColumn = 'date';
+let sortDirection = 'desc';
+
+async function loadMyInsights() {
+    try {
+        const response = await fetch('/api/my-insights');
+        const data = await response.json();
+        
+        if (data.success) {
+            insightsData = data.insights;
+            renderInsightsTable();
+        } else {
+            showInsightsError(data.error || 'Failed to load insights');
+        }
+    } catch (error) {
+        console.error('Failed to load insights:', error);
+        showInsightsError('Failed to load insights');
+    }
+}
+
+function renderInsightsTable() {
+    const tbody = document.getElementById('insights-table-body');
     
-    if (!activities || activities.length === 0) {
-        container.innerHTML = `
-            <p class="text-muted text-center py-4">
-                <i class="fas fa-clock fa-2x mb-3 d-block"></i>
-                No recent activity to display
-            </p>
+    if (!insightsData || insightsData.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="4" class="text-center py-4">
+                    <i class="fas fa-brain fa-2x mb-3 d-block text-muted"></i>
+                    <div class="text-muted">No insights generated yet</div>
+                    <div class="mt-2">
+                        <a href="/" class="btn btn-primary btn-sm">
+                            <i class="fas fa-plus me-1"></i>
+                            Generate Your First Insight
+                        </a>
+                    </div>
+                </td>
+            </tr>
         `;
         return;
     }
     
-    container.innerHTML = activities.map(activity => `
-        <div class="activity-item d-flex align-items-start mb-3">
-            <div class="activity-icon me-3">
-                <i class="${activity.icon} ${activity.color}"></i>
-            </div>
-            <div class="activity-content flex-grow-1">
-                <div class="activity-description">
-                    ${activity.description}
+    // Sort data
+    const sortedData = [...insightsData].sort((a, b) => {
+        let aVal = a[sortColumn];
+        let bVal = b[sortColumn];
+        
+        // Handle different data types
+        if (sortColumn === 'date') {
+            aVal = new Date(aVal);
+            bVal = new Date(bVal);
+        } else if (sortColumn === 'tokens') {
+            aVal = parseInt(aVal) || 0;
+            bVal = parseInt(bVal) || 0;
+        } else {
+            aVal = String(aVal).toLowerCase();
+            bVal = String(bVal).toLowerCase();
+        }
+        
+        if (sortDirection === 'asc') {
+            return aVal > bVal ? 1 : -1;
+        } else {
+            return aVal < bVal ? 1 : -1;
+        }
+    });
+    
+    tbody.innerHTML = sortedData.map(insight => `
+        <tr>
+            <td>
+                <div class="fw-semibold">${escapeHtml(insight.title)}</div>
+                <small class="text-muted">${insight.total_insights} insights generated</small>
+            </td>
+            <td>
+                <span class="badge bg-info text-white">${formatNumber(insight.tokens)}</span>
+                <small class="text-muted d-block">${insight.processing_time?.toFixed(1)}s processing</small>
+            </td>
+            <td>
+                <div>${formatDate(insight.date)}</div>
+                <small class="text-muted">${formatRelativeTime(insight.date)}</small>
+            </td>
+            <td>
+                <div class="btn-group btn-group-sm">
+                    <a href="/insights/${insight.id}" class="btn btn-outline-primary" title="View Insight">
+                        <i class="fas fa-eye"></i>
+                    </a>
+                    <button onclick="shareInsight('${insight.id}', ${insight.is_shared})" 
+                            class="btn btn-outline-secondary" 
+                            title="${insight.is_shared ? 'Unshare' : 'Share'} Insight">
+                        <i class="fas fa-${insight.is_shared ? 'eye-slash' : 'share'}"></i>
+                    </button>
                 </div>
-                <div class="activity-time text-muted small">
-                    <i class="fas fa-clock me-1"></i>
-                    ${activity.relative_time}
-                    ${activity.formatted_time !== 'Unknown' ? `at ${activity.formatted_time}` : ''}
-                </div>
-                ${activity.metadata && Object.keys(activity.metadata).length > 0 ? `
-                    <div class="activity-metadata mt-1">
-                        ${generateActivityMetadata(activity.metadata)}
-                    </div>
-                ` : ''}
-            </div>
-        </div>
+            </td>
+        </tr>
     `).join('');
+    
+    // Update sort indicators
+    updateSortIndicators();
 }
 
-function generateActivityMetadata(metadata) {
-    const items = [];
+function updateSortIndicators() {
+    document.querySelectorAll('.sortable i').forEach(icon => {
+        icon.className = 'fas fa-sort ms-1';
+    });
     
-    if (metadata.topic) {
-        items.push(`<span class="badge bg-light text-dark me-1">Topic: ${metadata.topic}</span>`);
+    const currentHeader = document.querySelector(`[data-column="${sortColumn}"] i`);
+    if (currentHeader) {
+        currentHeader.className = `fas fa-sort-${sortDirection === 'asc' ? 'up' : 'down'} ms-1`;
     }
-    if (metadata.tokens) {
-        items.push(`<span class="badge bg-info text-white me-1">${metadata.tokens} tokens</span>`);
-    }
-    if (metadata.processing_time) {
-        items.push(`<span class="badge bg-success text-white me-1">${metadata.processing_time}s</span>`);
-    }
-    if (metadata.status) {
-        const statusColor = metadata.status === 'success' ? 'bg-success' : 'bg-danger';
-        items.push(`<span class="badge ${statusColor} text-white me-1">${metadata.status}</span>`);
-    }
-    
-    return items.join('');
 }
 
-async function trackActivity(type, description, metadata = {}) {
+function sortTable(column) {
+    if (sortColumn === column) {
+        sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+        sortColumn = column;
+        sortDirection = 'desc';
+    }
+    renderInsightsTable();
+}
+
+function showInsightsError(message) {
+    const tbody = document.getElementById('insights-table-body');
+    tbody.innerHTML = `
+        <tr>
+            <td colspan="4" class="text-center py-4">
+                <i class="fas fa-exclamation-triangle text-warning fa-2x mb-3"></i>
+                <div class="text-muted">${message}</div>
+                <button class="btn btn-sm btn-outline-primary mt-2" onclick="loadMyInsights()">
+                    <i class="fas fa-sync-alt me-1"></i>Retry
+                </button>
+            </td>
+        </tr>
+    `;
+}
+
+async function shareInsight(insightId, currentStatus) {
     try {
-        await fetch('/api/track-activity', {
+        const response = await fetch(`/api/insights/${insightId}/share`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                type: type,
-                description: description,
-                metadata: metadata
+                is_shared: !currentStatus
             })
         });
+        
+        const data = await response.json();
+        if (data.success) {
+            // Refresh the table
+            loadMyInsights();
+        } else {
+            alert('Failed to update sharing status');
+        }
     } catch (error) {
-        console.error('Failed to track activity:', error);
+        console.error('Error updating sharing status:', error);
+        alert('Failed to update sharing status');
     }
 }
+
+// Utility functions for table formatting
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function formatDate(dateString) {
+    try {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+        });
+    } catch {
+        return 'Unknown';
+    }
+}
+
+function formatRelativeTime(dateString) {
+    try {
+        const date = new Date(dateString);
+        const now = new Date();
+        const diffMs = now - date;
+        const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+        const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+        const diffMins = Math.floor(diffMs / (1000 * 60));
+        
+        if (diffDays > 0) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+        if (diffHours > 0) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+        if (diffMins > 0) return `${diffMins} minute${diffMins > 1 ? 's' : ''} ago`;
+        return 'Just now';
+    } catch {
+        return 'Unknown';
+    }
+}
+
+
 
 function showErrorMessage() {
     document.getElementById('usage-stats-container').innerHTML = `
@@ -595,8 +746,16 @@ document.addEventListener('DOMContentLoaded', function() {
     loadUserData();
     loadDashboardAnalytics();
     
-    // Track dashboard view
-    trackActivity('dashboard_viewed', 'Viewed dashboard');
+    // Add click listeners for sortable table headers
+    document.querySelectorAll('.sortable').forEach(header => {
+        header.addEventListener('click', function() {
+            const column = this.getAttribute('data-column');
+            sortTable(column);
+        });
+        header.style.cursor = 'pointer';
+    });
+    
+
     
     // Refresh every 2 minutes
     setInterval(loadDashboardAnalytics, 120000);
@@ -696,6 +855,38 @@ document.addEventListener('DOMContentLoaded', function() {
     border: none;
     border-radius: 15px;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* My Insights Table Styles */
+.sortable {
+    user-select: none;
+    transition: background-color 0.2s ease;
+}
+
+.sortable:hover {
+    background-color: rgba(0, 123, 255, 0.1);
+}
+
+.sortable i {
+    opacity: 0.5;
+    transition: opacity 0.2s ease;
+}
+
+.sortable:hover i {
+    opacity: 1;
+}
+
+#insights-table tbody tr {
+    transition: background-color 0.2s ease;
+}
+
+#insights-table tbody tr:hover {
+    background-color: rgba(0, 123, 255, 0.05);
+}
+
+.btn-group-sm .btn {
+    font-size: 0.775rem;
+    padding: 0.25rem 0.5rem;
 }
 
 .card:hover {
