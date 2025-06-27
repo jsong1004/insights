@@ -3,8 +3,8 @@ FROM python:3.11-slim
 
 # Set metadata
 LABEL maintainer="AI Insights Generator"
-LABEL description="Flask web application for generating AI insights using CrewAI multi-agent system with Firebase authentication"
-LABEL version="2.0"
+LABEL description="Flask web application for generating AI insights using CrewAI multi-agent system with Firebase authentication, usage statistics tracking, and automated session timeout management"
+LABEL version="2.1"
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1 \
@@ -37,6 +37,7 @@ COPY static/ static/
 COPY auth/ auth/
 COPY core/ core/
 COPY routes/ routes/
+COPY functions/ functions/
 
 # Copy Firebase service account key if it exists (optional for local development)
 COPY service-account-key.json* ./
@@ -54,7 +55,7 @@ USER appuser
 # Expose port
 EXPOSE 5000
 
-# Health check
+# Health check - includes status endpoint that validates usage stats and session management
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
     CMD python -c "import requests; requests.get('http://localhost:5000/status', timeout=10)" || exit 1
 
@@ -66,6 +67,7 @@ ENV FLASK_APP=app.py \
 
 # Firebase configuration will be provided via Cloud Run secrets
 # No sensitive data is stored in the Docker image
+# Usage statistics and session timeout are configured via environment variables
 
 # Run the application
 CMD ["python", "app.py"] 

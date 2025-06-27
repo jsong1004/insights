@@ -1,0 +1,101 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+bin/
+include/
+pyvenv.cfg
+lib/
+share/
+
+# Development files
+.git/
+.gitignore
+*.log
+.DS_Store
+.vscode/
+.idea/
+
+# Documentation and markdown files (except essential ones)
+*.md
+!README.md
+CLAUDE.md
+GEMINI.md
+DOCKER_FIREBASE_UPDATE.md
+social-features-implementation.md
+firestore-manager-fix.md
+authentication-fixes-summary.md
+firebase-auth-implementation.md
+OPENROUTER_INTEGRATION.md
+FIRESTORE_SETUP.md
+
+# Test files
+test_*.py
+*_test.py
+tests/
+
+# Docker files (don't include other Docker files)
+docker-compose*.yml
+Dockerfile*
+!Dockerfile.insight
+build-*.sh
+
+# Environment and config files that shouldn't be in image
+.env
+.env.local
+.env.production
+environment-template.txt
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Logs and temporary files
+logs/
+*.log
+pglite-debug.log
+tmp/
+temp/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Node modules (if any)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log* 

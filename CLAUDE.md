@@ -3,7 +3,7 @@
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project Overview
-This is a Flask web application that generates AI insights using CrewAI's multi-agent system. The app features Firebase authentication, social sharing capabilities, and a modern web interface.
+This is a Flask web application that generates AI insights using CrewAI's multi-agent system. The app features Firebase authentication, social sharing capabilities, comprehensive usage statistics tracking, automated session timeout management, and a modern web interface.
 
 ## Technology Stack
 - **Backend**: Flask 3.1.1, Python 3.11+
@@ -74,12 +74,14 @@ The CrewAI system orchestrates three specialized agents:
 ### Authentication Flow
 1. Client-side Firebase SDK handles login/signup
 2. Server-side Firebase Admin SDK verifies JWT tokens
-3. Flask sessions with 30-day persistence
+3. Flask sessions with automated timeout management (15-minute inactivity timeout)
 4. Protected routes require authentication for insight generation
+5. Dual-layer session timeout with server-side cleanup and client-side auto-logout
 
 ### Database Schema (Firestore)
-- **Users collection**: User profiles and metadata
+- **Users collection**: User profiles, metadata, and comprehensive usage statistics
 - **GeneratedInsights collection**: Insights with social features (likes, sharing)
+- **Usage tracking**: Multi-level metrics (daily, monthly, total) with token-based metering
 - **Structured data models**: Pydantic models in `core/crew_ai.py` define insight structure
 
 ## Environment Configuration
@@ -103,17 +105,36 @@ The app is pre-configured for Firebase project `ai-biz-6b7ec`. See `config.py` f
 - **Author attribution**: User profiles linked to insights
 - **Privacy controls**: Authors can toggle sharing status
 
+### Usage Statistics & Analytics
+- **Comprehensive tracking**: Multi-level usage metrics (daily, monthly, total)
+- **Token-based metering**: Accurate AI usage cost tracking with intelligent estimation
+- **Plan-based limits**: Free, Basic, Pro, Enterprise subscription tiers
+- **Real-time dashboard**: Visual progress bars, charts, and 7-day activity tracking
+- **Proactive warnings**: Usage alerts and limit notifications
+- **Historical data**: 30-day rolling usage history with monthly breakdowns
+- **Automated management**: Monthly reset via Firebase Cloud Functions
+
+### Session Management
+- **Automated timeouts**: 15-minute inactivity-based session expiration
+- **Activity tracking**: Real-time `last_activity` timestamp updates
+- **Dual-layer protection**: Server-side cleanup with client-side auto-logout
+- **Timezone-aware**: UTC timestamps for consistent session management
+- **Graceful handling**: Automatic session cleanup and user redirection
+
 ### Security Features
 - **JWT token verification**: Server-side validation of Firebase tokens
-- **Session management**: Secure Flask sessions with automatic renewal
+- **Session management**: Secure Flask sessions with automated timeout and renewal
 - **Protected routes**: Decorator-based route protection
 - **Input validation**: Pydantic models validate all user inputs
+- **Usage limits**: Plan-based rate limiting and quota enforcement
 
 ### UI/UX Enhancements
 - **Loading states**: Interactive buttons with progress feedback
 - **Form protection**: Prevents double submissions
-- **Real-time updates**: Live social interactions
+- **Real-time updates**: Live social interactions and usage statistics
+- **Usage dashboard**: Visual progress bars, charts, and activity tracking
 - **Responsive design**: Bootstrap 5.3 with mobile-first approach
+- **Proactive notifications**: Usage warnings and limit alerts
 
 ## Deployment Architecture
 
@@ -149,6 +170,8 @@ Use `UserFirestoreManager` and `InsightsFirestoreManager` classes for:
 - User data management and profile operations
 - Insights CRUD operations with social features
 - Atomic operations for likes and sharing controls
+- Usage statistics tracking and limit enforcement
+- Session timeout and activity management
 
 ## Testing Strategy
 The `test_flask_app.py` provides comprehensive validation:
@@ -158,4 +181,20 @@ The `test_flask_app.py` provides comprehensive validation:
 - Database connection verification
 - API endpoint functionality testing
 
+Additional test suites:
+- **`test_usage_stats.py`**: Usage statistics tracking and limit validation
+- **Session timeout testing**: Automated session management verification
+
 Run tests before deployment to ensure system integrity and proper configuration.
+
+## Key API Endpoints
+
+### Usage Statistics
+- **`GET /api/usage-stats`**: Retrieve user's current usage statistics
+- Includes daily, monthly, and total usage metrics
+- Returns plan limits and remaining quotas
+
+### Session Management
+- Session timeout handled automatically via `@app.before_request`
+- 15-minute inactivity timeout with timezone-aware tracking
+- Client-side auto-logout via meta refresh tag

@@ -1,8 +1,8 @@
 # 🧠 AI Insights Generator - Flask Web App
 
-A powerful social web application that uses CrewAI's multi-agent system to generate intelligent insights on any topic. Users can sign up, log in, and share insights with the community while building their personal research library.
+A powerful social web application that uses CrewAI's multi-agent system to generate intelligent insights on any topic. Users can sign up, log in, and share insights with the community while building their personal research library. Features comprehensive usage statistics tracking, automated session timeout management, and plan-based subscription limits.
 
-**Latest Update (June 2025)**: Now featuring advanced search parameters with source type filtering (General, News, Finance & Business) and time range controls (None, Day, Week, Month, Year), enhanced error handling for search tool compatibility, robust fallback mechanisms, and a health check endpoint for monitoring. Running on Flask 3.1.1 with CrewAI 0.134.0 for enhanced performance, user management, and collaborative insights.
+**Latest Update (June 2025)**: Now featuring comprehensive usage statistics tracking with multi-tier subscription plans, automated 15-minute session timeout management, advanced search parameters with source type filtering (General, News, Finance & Business) and time range controls (None, Day, Week, Month, Year), enhanced error handling for search tool compatibility, robust fallback mechanisms, and a health check endpoint for monitoring. Running on Flask 3.1.1 with CrewAI 0.134.0 for enhanced performance, user management, and collaborative insights.
 
 ## ✨ Features
 
@@ -15,10 +15,11 @@ A powerful social web application that uses CrewAI's multi-agent system to gener
 ### 🔐 Firebase Authentication & User Management
 - **Email/Password Authentication**: Secure user registration and login with email verification
 - **Google Sign-in**: One-click authentication with Google accounts
-- **Session Management**: Persistent login sessions with automatic token refresh
+- **Session Management**: Persistent login sessions with automatic token refresh and 15-minute timeout
 - **User Dashboard**: Account information, usage statistics, and subscription management
 - **Protected Routes**: Secure access to insight generation and personal data
 - **Clean Auth Pages**: Dedicated authentication layouts without distracting sidebars
+- **Automated Session Timeout**: Dual-layer session management with inactivity-based expiration
 
 ### 🌟 Social Features & Community
 - **Public Sharing**: Insights are shared publicly by default (opt-out system)
@@ -43,6 +44,15 @@ A powerful social web application that uses CrewAI's multi-agent system to gener
 - **Interactive Sidebar**: Browse and manage previous insights with social indicators
 - **Beautiful UI**: Modern gradient design with smooth animations and accessibility features
 - **Enhanced Security**: Latest Flask security features with Firebase authentication
+
+### 📊 Usage Statistics & Analytics (NEW)
+- **Comprehensive Tracking**: Multi-level usage metrics (daily, monthly, total)
+- **Token-based Metering**: Accurate AI usage cost tracking with intelligent estimation
+- **Plan-based Limits**: Free (20/month), Basic (100/month), Pro (500/month), Enterprise (unlimited)
+- **Real-time Dashboard**: Visual progress bars, charts, and 7-day activity tracking
+- **Proactive Warnings**: Usage alerts when approaching limits (80%+ quota used)
+- **Historical Data**: 30-day rolling usage history with monthly breakdowns
+- **Automated Management**: Monthly reset via Firebase Cloud Functions
 
 ### 📊 Intelligent Features
 - **Advanced Confidence Scoring**: Enhanced validation algorithms with detailed metrics
@@ -212,11 +222,11 @@ docker-compose -f docker-compose.insight.yml up
 
 ### Authentication Flow
 ```
-┌─────────────┐    ┌─────────────┐    ┌─────────────┐
-│   Firebase  │ -> │   Backend   │ -> │  Protected  │
-│Client Auth  │    │Token Verify │    │   Routes    │
-│(Frontend)   │    │(Flask)      │    │             │
-└─────────────┘    └─────────────┘    └─────────────┘
+┌─────────────┐    ┌─────────────┐    ┌─────────────┐    ┌─────────────┐
+│   Firebase  │ -> │   Backend   │ -> │  Session    │ -> │  Protected  │
+│Client Auth  │    │Token Verify │    │ Timeout     │    │   Routes    │
+│(Frontend)   │    │(Flask)      │    │(15 min)     │    │             │
+└─────────────┘    └─────────────┘    └─────────────┘    └─────────────┘
 ```
 
 ### Social Features Pipeline
@@ -268,15 +278,16 @@ docker-compose -f docker-compose.insight.yml up
 
 ### API Endpoints (Enhanced with Authentication)
 - `GET /` - Home page with authentication-aware interface
-- `POST /generate` - Generate insights (requires login) with loading states
+- `POST /generate` - Generate insights (requires login) with loading states and usage tracking
 - `GET /insights/<id>` - View specific insights with social data
 - `POST /delete/<id>` - Delete insights (owner only)
 - `GET /api/shared-insights` - JSON API for public insights
+- `GET /api/usage-stats` - Get user's current usage statistics and limits
 - `POST /api/insights/<id>/like` - Like/unlike insights (requires login)
 - `POST /api/insights/<id>/share` - Toggle privacy (author only)
-- `POST /auth/api/login` - Firebase authentication endpoint
-- `POST /auth/api/signup` - User registration endpoint
-- `GET /auth/dashboard` - User account dashboard
+- `POST /auth/api/login` - Firebase authentication endpoint with session setup
+- `POST /auth/api/signup` - User registration endpoint with session setup
+- `GET /auth/dashboard` - User account dashboard with usage analytics
 - `GET /auth/profile` - User profile management
 - `GET /debug/insights` - Debug endpoint for troubleshooting
 - `GET /status` - Health check and system status
@@ -288,16 +299,18 @@ The application uses Firebase for secure user authentication:
 
 1. **Client-side**: Firebase SDK handles login/signup with email or Google
 2. **Server-side**: Firebase Admin SDK verifies tokens and manages sessions
-3. **Session Management**: Flask sessions with 30-day persistence
+3. **Session Management**: Flask sessions with automated 15-minute timeout and activity tracking
 4. **Route Protection**: Decorators ensure only authenticated users can generate insights
+5. **Dual-layer Timeout**: Server-side cleanup with client-side auto-logout for comprehensive session management
 
 ### Security Features
 - **Token Verification**: All protected routes verify Firebase tokens
 - **CSRF Protection**: Flask-WTF protection against cross-site requests
-- **Session Security**: Secure cookie settings and automatic expiration
+- **Session Security**: Secure cookie settings with automated timeout and expiration
 - **Input Validation**: Pydantic models validate all user inputs
 - **Error Handling**: Graceful error handling without exposing sensitive data
 - **Secret Management**: Production secrets stored in Google Cloud Secret Manager
+- **Usage Limits**: Plan-based rate limiting and quota enforcement for resource protection
 
 ### User Permissions
 - **Public**: Browse shared insights, view community feed
@@ -345,6 +358,41 @@ The application uses Firebase for secure user authentication:
     "created_at": "2025-01-26T12:00:00Z",
     "updated_at": "2025-01-26T12:00:00Z"
 }
+
+# User document with comprehensive usage tracking
+{
+    "id": "firebase_user_id",
+    "email": "user@example.com",
+    "name": "User Name",
+    "usage": {
+        "insights_generated": 15,
+        "total_tokens_used": 45000,
+        "current_month": "2025-01",
+        "insights_remaining": 5,
+        "monthly_breakdown": {
+            "2025-01": {
+                "insights": 15,
+                "tokens": 45000,
+                "search_requests": 45,
+                "days_active": 8
+            }
+        },
+        "daily_usage": {
+            "2025-01-26": {
+                "insights": 3,
+                "tokens": 8500,
+                "search_requests": 9
+            }
+        }
+    },
+    "limits": {
+        "monthly_insights": 20,  # Plan-based limits
+        "monthly_tokens": 100000,
+        "daily_insights": 5,
+        "rate_limit_per_hour": 10
+    },
+    "last_activity": "2025-01-26T12:00:00Z"
+}
 ```
 
 ## 🐳 Docker Deployment
@@ -388,21 +436,25 @@ gcloud run deploy ai-insights-app \
 All features have been thoroughly tested:
 
 1. **Firebase Authentication**: ✅ Email/password and Google sign-in working
-2. **User Sessions**: ✅ Persistent login with automatic token refresh
-3. **Advanced Search Parameters**: ✅ Source type and time range filtering working
-4. **Search Tool Fallback**: ✅ Robust error handling and automatic fallback mechanisms
-5. **Social Features**: ✅ Like system and privacy controls functional
-6. **Public Sharing**: ✅ Guest access to community insights
-7. **Protected Routes**: ✅ Login requirements properly enforced
-8. **Web Interface**: ✅ Responsive UI with authentication integration
-9. **Insight Generation**: ✅ Multi-agent AI with user attribution and search guidance
-10. **Firestore Storage**: ✅ User data, social features, and search parameters persisted
-11. **Error Handling**: ✅ Comprehensive error recovery and user feedback
-12. **Loading States**: ✅ Interactive buttons with progress feedback
-13. **Form Protection**: ✅ Double-submission prevention and validation
-14. **Docker Deployment**: ✅ Containerized deployment working
-15. **Health Monitoring**: ✅ System status endpoint for monitoring
-16. **Dependency Management**: ✅ All required packages properly installed
+2. **User Sessions**: ✅ Persistent login with automatic token refresh and 15-minute timeout
+3. **Usage Statistics**: ✅ Comprehensive tracking with multi-tier subscription plans
+4. **Session Timeout Management**: ✅ Automated 15-minute inactivity-based expiration
+5. **Advanced Search Parameters**: ✅ Source type and time range filtering working
+6. **Search Tool Fallback**: ✅ Robust error handling and automatic fallback mechanisms
+7. **Social Features**: ✅ Like system and privacy controls functional
+8. **Public Sharing**: ✅ Guest access to community insights
+9. **Protected Routes**: ✅ Login requirements properly enforced
+10. **Web Interface**: ✅ Responsive UI with authentication integration
+11. **Insight Generation**: ✅ Multi-agent AI with user attribution and search guidance
+12. **Firestore Storage**: ✅ User data, social features, and search parameters persisted
+13. **Error Handling**: ✅ Comprehensive error recovery and user feedback
+14. **Loading States**: ✅ Interactive buttons with progress feedback
+15. **Form Protection**: ✅ Double-submission prevention and validation
+16. **Docker Deployment**: ✅ Containerized deployment working
+17. **Health Monitoring**: ✅ System status endpoint for monitoring
+18. **Dependency Management**: ✅ All required packages properly installed
+19. **Usage Dashboard**: ✅ Real-time analytics with visual progress tracking
+20. **Plan-based Limits**: ✅ Quota enforcement and proactive warnings
 
 ### Authentication Testing
 - [x] Email/password registration and login
@@ -411,6 +463,9 @@ All features have been thoroughly tested:
 - [x] Session persistence across browser restarts
 - [x] Token refresh and expiration handling
 - [x] Logout functionality
+- [x] 15-minute session timeout with automatic logout
+- [x] Activity tracking and session renewal
+- [x] Dual-layer timeout (server + client-side)
 
 ### Social Features Testing
 - [x] Default public sharing of new insights
@@ -435,6 +490,15 @@ All features have been thoroughly tested:
 - [x] AI agent guidance based on search parameters
 - [x] Search parameters display in generated insights
 - [x] Backend parameter processing and validation
+
+### Usage Statistics Testing
+- [x] Real-time usage tracking and metrics collection
+- [x] Token-based metering with intelligent estimation
+- [x] Plan-based limit enforcement (Free, Basic, Pro, Enterprise)
+- [x] Monthly and daily usage breakdowns
+- [x] Proactive warnings when approaching limits
+- [x] Usage dashboard with visual progress indicators
+- [x] Historical data retention and monthly reset functionality
 
 ### Search Tool Compatibility Testing
 - [x] TavilySearchTool initialization error handling
