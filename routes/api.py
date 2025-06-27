@@ -1,6 +1,9 @@
+import logging
 from flask import Blueprint, jsonify, session, request, current_app
 from core.insights_manager import FirestoreManager
 from auth.firebase_auth import login_required
+
+logger = logging.getLogger(__name__)
 
 api_bp = Blueprint('api', __name__, url_prefix='/api')
 
@@ -90,4 +93,26 @@ def get_usage_stats():
         return jsonify({
             'success': False,
             'error': 'Failed to retrieve usage statistics'
+        }), 500
+
+@api_bp.route('/dashboard-analytics')
+@login_required
+def get_dashboard_analytics():
+    """Get comprehensive dashboard analytics"""
+    try:
+        user_id = session.get('user_id')
+        firestore_manager = current_app.extensions.get('firestore_manager')
+        
+        analytics = firestore_manager.get_dashboard_analytics(user_id)
+        
+        return jsonify({
+            'success': True,
+            'analytics': analytics
+        })
+        
+    except Exception as e:
+        logger.error(f"Error getting dashboard analytics: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Failed to retrieve dashboard analytics'
         }), 500

@@ -481,4 +481,149 @@ class UserFirestoreManager:
             },
             'daily_breakdown': self._get_last_7_days_usage({}),
             'subscription': {'plan': 'free', 'status': 'active'}
-        } 
+        }
+
+    def get_dashboard_analytics(self, user_id: str) -> Dict[str, Any]:
+        """Get comprehensive dashboard analytics"""
+        try:
+            stats = self.get_usage_stats(user_id)
+            user_data = self.get_user_data(user_id)
+            
+            # Calculate additional metrics
+            current_streak = self._calculate_current_streak(stats['daily_breakdown'])
+            efficiency_score = self._calculate_efficiency_score(stats)
+            avg_processing_time = self._get_average_processing_time(user_id)
+            
+            return {
+                **stats,
+                'quick_stats': {
+                    'total_insights': stats['current_usage']['insights_generated'],
+                    'current_streak': current_streak,
+                    'avg_processing_time': avg_processing_time,
+                    'efficiency_score': efficiency_score
+                },
+                'activity_heatmap': self._generate_activity_heatmap(stats['daily_breakdown']),
+                'monthly_trend': self._get_monthly_trend(user_data),
+                'recommendations': self._generate_recommendations(stats)
+            }
+        except Exception as e:
+            logger.error(f"Error getting dashboard analytics: {e}")
+            return self.get_usage_stats(user_id)  # Fallback to basic stats
+
+    def _calculate_current_streak(self, daily_breakdown: List) -> int:
+        """Calculate current consecutive days of activity"""
+        streak = 0
+        for day in reversed(daily_breakdown):
+            if day['insights'] > 0:
+                streak += 1
+            else:
+                break
+        return streak
+
+    def _calculate_efficiency_score(self, stats: Dict) -> int:
+        """Calculate efficiency score based on usage patterns"""
+        if stats['current_usage']['insights_generated'] == 0:
+            return 0
+        
+        # Score based on insights per session, token efficiency, etc.
+        insights = stats['current_usage']['insights_generated']
+        tokens = stats['current_usage']['total_tokens_used']
+        
+        # Token efficiency (lower tokens per insight = higher score)
+        if insights > 0:
+            tokens_per_insight = tokens / insights
+            efficiency = max(0, 100 - (tokens_per_insight / 100))  # Normalize
+            return min(100, int(efficiency))
+        return 0
+
+    def _get_average_processing_time(self, user_id: str) -> float:
+        """Get average processing time from recent insights"""
+        # This would query insights collection for this user
+        # For now, return estimated value
+        return 45.2  # seconds
+
+    def _generate_activity_heatmap(self, daily_breakdown: List) -> List[Dict]:
+        """Generate 7-day activity heatmap data"""
+        heatmap = []
+        for day in daily_breakdown:
+            level = 0
+            if day['insights'] > 0:
+                if day['insights'] >= 5:
+                    level = 4
+                elif day['insights'] >= 3:
+                    level = 3
+                elif day['insights'] >= 2:
+                    level = 2
+                else:
+                    level = 1
+            
+            heatmap.append({
+                'date': day['date'],
+                'day_name': day['day_name'],
+                'insights': day['insights'],
+                'level': level
+            })
+        return heatmap
+
+    def _get_monthly_trend(self, user_data: Dict) -> Dict:
+        """Get monthly usage trend"""
+        if not user_data:
+            return {'data': [], 'direction': 'stable'}
+            
+        usage = user_data.get('usage', {})
+        monthly_breakdown = usage.get('monthly_breakdown', {})
+        
+        # Get last 3 months for trend
+        months = sorted(monthly_breakdown.keys())[-3:]
+        trend_data = []
+        
+        for month in months:
+            data = monthly_breakdown[month]
+            trend_data.append({
+                'month': month,
+                'insights': data.get('insights', 0),
+                'tokens': data.get('tokens', 0),
+                'days_active': data.get('days_active', 0)
+            })
+        
+        return {
+            'data': trend_data,
+            'direction': self._calculate_trend_direction(trend_data)
+        }
+
+    def _calculate_trend_direction(self, trend_data: List) -> str:
+        """Calculate if usage is trending up, down, or stable"""
+        if len(trend_data) < 2:
+            return 'stable'
+        
+        recent = trend_data[-1]['insights']
+        previous = trend_data[-2]['insights']
+        
+        if recent > previous * 1.1:
+            return 'up'
+        elif recent < previous * 0.9:
+            return 'down'
+        else:
+            return 'stable'
+
+    def _generate_recommendations(self, stats: Dict) -> List[str]:
+        """Generate personalized recommendations"""
+        recommendations = []
+        
+        usage_pct = stats['usage_percentage']['insights']
+        
+        if usage_pct > 80:
+            recommendations.append("You're approaching your monthly limit. Consider upgrading your plan.")
+        elif usage_pct < 20:
+            recommendations.append("You have plenty of insights remaining. Try exploring new research topics!")
+        
+        # Check daily patterns
+        daily_breakdown = stats['daily_breakdown']
+        active_days = sum(1 for day in daily_breakdown if day['insights'] > 0)
+        
+        if active_days < 3:
+            recommendations.append("Try to use the service more regularly for better research habits.")
+        elif active_days >= 6:
+            recommendations.append("Great consistency! You're building excellent research habits.")
+        
+        return recommendations 

@@ -16,6 +16,64 @@
         </div>
     </div>
     
+    <!-- Smart Notifications Area -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div id="smart-notifications"></div>
+        </div>
+    </div>
+    
+    <!-- Quick Stats Row -->
+    <div class="row mb-4">
+        <div class="col-md-3 col-sm-6 mb-3">
+            <div class="stats-card bg-primary">
+                <div class="stats-icon">
+                    <i class="fas fa-brain"></i>
+                </div>
+                <div class="stats-content">
+                    <h3 id="total-insights">--</h3>
+                    <p>Total Insights</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3 col-sm-6 mb-3">
+            <div class="stats-card bg-success">
+                <div class="stats-icon">
+                    <i class="fas fa-calendar-day"></i>
+                </div>
+                <div class="stats-content">
+                    <h3 id="current-streak">--</h3>
+                    <p>Day Streak</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3 col-sm-6 mb-3">
+            <div class="stats-card bg-info">
+                <div class="stats-icon">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="stats-content">
+                    <h3 id="avg-processing">--</h3>
+                    <p>Avg Time (s)</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3 col-sm-6 mb-3">
+            <div class="stats-card bg-warning">
+                <div class="stats-icon">
+                    <i class="fas fa-trophy"></i>
+                </div>
+                <div class="stats-content">
+                    <h3 id="efficiency-score">--</h3>
+                    <p>Efficiency</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
     <div class="row">
         <!-- User Info Card -->
         <div class="col-md-6 col-lg-4 mb-4">
@@ -41,28 +99,29 @@
             </div>
         </div>
         
-        <!-- Update the Usage Stats Card -->
-<div class="col-md-6 col-lg-4 mb-4">
-    <div class="card h-100 shadow-sm">
-        <div class="card-body">
-            <h5 class="card-title">
-                <i class="fas fa-chart-bar text-success me-2"></i>
-                Usage Stats
-            </h5>
-            
-            <div class="usage-stats" id="usage-stats-container">
-                <div class="text-center py-3">
-                    <div class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden">Loading...</span>
+        <!-- Enhanced Usage Stats Card -->
+        <div class="col-md-8 col-lg-6 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-header bg-gradient-primary text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-chart-line me-2"></i>
+                        Usage Analytics
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div id="usage-stats-container">
+                        <div class="text-center py-3">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
-</div>
         
         <!-- Subscription Card -->
-        <div class="col-md-6 col-lg-4 mb-4">
+        <div class="col-md-6 col-lg-2 mb-4">
             <div class="card h-100 shadow-sm">
                 <div class="card-body">
                     <h5 class="card-title">
@@ -109,7 +168,7 @@
                         </div>
                         
                         <div class="col-md-3 mb-3">
-                            <button class="btn btn-outline-secondary w-100" onclick="location.reload()">
+                            <button class="btn btn-outline-secondary w-100" onclick="loadDashboardAnalytics()">
                                 <i class="fas fa-sync-alt me-2"></i>
                                 Refresh Data
                             </button>
@@ -157,7 +216,7 @@
 </div>
 
 <script>
-// Dashboard JavaScript functionality
+// Enhanced Dashboard JavaScript functionality
 async function loadUserData() {
     try {
         const response = await fetch('/auth/api/user');
@@ -165,7 +224,6 @@ async function loadUserData() {
         
         if (response.ok) {
             console.log('User data:', data);
-            // You can update the UI with fresh data here
         } else {
             console.error('Failed to load user data:', data);
         }
@@ -193,119 +251,274 @@ async function logout() {
     }
 }
 
-// Load fresh user data on page load
-document.addEventListener('DOMContentLoaded', function() {
-    loadUserData();
-});
-
-async function loadUsageStats() {
+async function loadDashboardAnalytics() {
     try {
-        const response = await fetch('/api/usage-stats');
+        const response = await fetch('/api/dashboard-analytics');
         const data = await response.json();
         
         if (data.success) {
-            const stats = data.stats;
-            const container = document.getElementById('usage-stats-container');
+            const analytics = data.analytics;
             
-            container.innerHTML = `
-                <!-- Monthly Insights -->
-                <div class="mb-3">
-                    <div class="d-flex justify-content-between align-items-center mb-1">
+            // Update quick stats
+            updateQuickStats(analytics.quick_stats);
+            
+            // Update main usage stats
+            updateUsageStats(analytics);
+            
+            // Update activity heatmap
+            updateActivityHeatmap(analytics.activity_heatmap);
+            
+            // Update recommendations
+            updateRecommendations(analytics.recommendations);
+            
+            // Update smart notifications
+            updateSmartNotifications(analytics);
+            
+        } else {
+            throw new Error(data.error || 'Failed to load analytics');
+        }
+    } catch (error) {
+        console.error('Failed to load dashboard analytics:', error);
+        showErrorMessage();
+    }
+}
+
+function updateQuickStats(quickStats) {
+    document.getElementById('total-insights').textContent = quickStats.total_insights || '0';
+    document.getElementById('current-streak').textContent = quickStats.current_streak || '0';
+    document.getElementById('avg-processing').textContent = quickStats.avg_processing_time?.toFixed(1) || '0.0';
+    document.getElementById('efficiency-score').textContent = quickStats.efficiency_score || '0';
+}
+
+function updateUsageStats(analytics) {
+    const container = document.getElementById('usage-stats-container');
+    const stats = analytics;
+    
+    container.innerHTML = `
+        <!-- Progress Bars Section -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="progress-item">
+                    <div class="d-flex justify-content-between mb-2">
                         <span class="fw-semibold">Monthly Insights</span>
                         <span class="text-muted">${stats.current_usage.monthly_insights}/${stats.limits.monthly_insights}</span>
                     </div>
-                    <div class="progress" style="height: 10px;">
-                        <div class="progress-bar ${stats.usage_percentage.insights > 80 ? 'bg-danger' : stats.usage_percentage.insights > 60 ? 'bg-warning' : 'bg-success'}" 
-                             role="progressbar" 
-                             style="width: ${stats.usage_percentage.insights}%"
-                             aria-valuenow="${stats.usage_percentage.insights}" 
-                             aria-valuemin="0" 
-                             aria-valuemax="100">
+                    <div class="progress mb-1" style="height: 12px;">
+                        <div class="progress-bar ${getProgressBarColor(stats.usage_percentage.insights)}" 
+                             style="width: ${stats.usage_percentage.insights}%">
                         </div>
                     </div>
                     <small class="text-muted">${stats.remaining.monthly_insights} remaining</small>
                 </div>
-                
-                <!-- Token Usage -->
-                <div class="mb-3">
-                    <div class="d-flex justify-content-between align-items-center mb-1">
+            </div>
+            
+            <div class="col-md-6">
+                <div class="progress-item">
+                    <div class="d-flex justify-content-between mb-2">
                         <span class="fw-semibold">Token Usage</span>
-                        <span class="text-muted">${(stats.current_usage.monthly_tokens / 1000).toFixed(1)}k/${(stats.limits.monthly_tokens / 1000).toFixed(0)}k</span>
+                        <span class="text-muted">${formatNumber(stats.current_usage.monthly_tokens)}</span>
                     </div>
-                    <div class="progress" style="height: 10px;">
-                        <div class="progress-bar ${stats.usage_percentage.tokens > 80 ? 'bg-danger' : stats.usage_percentage.tokens > 60 ? 'bg-warning' : 'bg-info'}" 
-                             role="progressbar" 
-                             style="width: ${stats.usage_percentage.tokens}%"
-                             aria-valuenow="${stats.usage_percentage.tokens}" 
-                             aria-valuemin="0" 
-                             aria-valuemax="100">
+                    <div class="progress mb-1" style="height: 12px;">
+                        <div class="progress-bar bg-info" 
+                             style="width: ${stats.usage_percentage.tokens}%">
                         </div>
                     </div>
-                    <small class="text-muted">${((stats.limits.monthly_tokens - stats.current_usage.monthly_tokens) / 1000).toFixed(0)}k tokens remaining</small>
+                    <small class="text-muted">${formatNumber(stats.remaining.monthly_tokens)} remaining</small>
                 </div>
-                
-                <!-- Daily Insights -->
-                <div class="mb-3">
-                    <div class="d-flex justify-content-between align-items-center mb-1">
-                        <span class="fw-semibold">Today's Insights</span>
-                        <span class="text-muted">${stats.current_usage.daily_insights}/${stats.limits.daily_insights}</span>
+            </div>
+        </div>
+        
+        <!-- Activity Chart Section -->
+        <div class="mb-4">
+            <h6 class="text-muted mb-3">7-Day Activity</h6>
+            <div class="chart-container">
+                <canvas id="activityChart" width="400" height="150"></canvas>
+            </div>
+        </div>
+        
+        <!-- Monthly Trend -->
+        ${analytics.monthly_trend ? generateMonthlyTrendHTML(analytics.monthly_trend) : ''}
+    `;
+    
+    // Draw activity chart
+    drawActivityChart(stats.daily_breakdown);
+}
+
+function updateActivityHeatmap(heatmapData) {
+    const heatmapContainer = document.createElement('div');
+    heatmapContainer.innerHTML = `
+        <div class="mb-3">
+            <h6 class="text-muted mb-2">Weekly Activity Heatmap</h6>
+            <div class="activity-heatmap">
+                ${heatmapData.map(day => `
+                    <div class="heatmap-day level-${day.level}" 
+                         title="${day.date}: ${day.insights} insights">
+                        ${day.day_name}
                     </div>
-                    <div class="progress" style="height: 6px;">
-                        <div class="progress-bar bg-primary" 
-                             role="progressbar" 
-                             style="width: ${(stats.current_usage.daily_insights / stats.limits.daily_insights * 100)}%">
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- 7-Day Activity Chart -->
-                <div class="mt-4">
-                    <h6 class="text-muted mb-2">Last 7 Days Activity</h6>
-                    <div class="d-flex align-items-end" style="height: 60px;">
-                        ${stats.daily_breakdown.map(day => {
-                            const maxInsights = Math.max(...stats.daily_breakdown.map(d => d.insights), 1);
-                            const height = (day.insights / maxInsights * 100) || 0;
-                            return `
-                                <div class="flex-fill text-center position-relative" title="${day.date}: ${day.insights} insights">
-                                    <div class="bg-primary bg-opacity-75" 
-                                         style="height: ${height}%; min-height: ${day.insights > 0 ? '4px' : '0'}; 
-                                                margin: 0 2px; border-radius: 2px 2px 0 0;">
-                                    </div>
-                                    <small class="text-muted" style="font-size: 10px;">${day.day}</small>
-                                </div>
-                            `;
-                        }).join('')}
-                    </div>
-                </div>
-                
-                ${stats.usage_percentage.insights > 80 || stats.usage_percentage.tokens > 80 ? `
-                    <div class="alert alert-warning alert-sm mt-3 mb-0 py-2 px-3">
-                        <small>
-                            <i class="fas fa-exclamation-triangle me-1"></i>
-                            You're approaching your limits. 
-                            <a href="/billing/plans" class="alert-link">Upgrade plan</a>
-                        </small>
-                    </div>
-                ` : ''}
-            `;
-        }
-    } catch (error) {
-        console.error('Failed to load usage stats:', error);
-        document.getElementById('usage-stats-container').innerHTML = `
-            <p class="text-muted">Failed to load usage data</p>
-            <button class="btn btn-sm btn-outline-primary" onclick="loadUsageStats()">
-                <i class="fas fa-sync-alt me-1"></i>Retry
-            </button>
-        `;
+                `).join('')}
+            </div>
+        </div>
+    `;
+    
+    // Insert after progress bars
+    const container = document.getElementById('usage-stats-container');
+    const progressSection = container.querySelector('.row');
+    if (progressSection) {
+        progressSection.after(heatmapContainer.firstElementChild);
     }
 }
 
-// Load usage stats on page load
-document.addEventListener('DOMContentLoaded', function() {
-    loadUsageStats();
+function updateRecommendations(recommendations) {
+    if (!recommendations || recommendations.length === 0) return;
     
-    // Refresh stats every 30 seconds
-    setInterval(loadUsageStats, 30000);
+    const container = document.getElementById('usage-stats-container');
+    const recommendationsHTML = `
+        <div class="recommendations-section mt-4">
+            <h6 class="text-muted mb-2">
+                <i class="fas fa-lightbulb me-1"></i>Recommendations
+            </h6>
+            ${recommendations.map(rec => `
+                <div class="alert alert-info alert-sm py-2 mb-2">
+                    <small><i class="fas fa-info-circle me-1"></i>${rec}</small>
+                </div>
+            `).join('')}
+        </div>
+    `;
+    
+    container.insertAdjacentHTML('beforeend', recommendationsHTML);
+}
+
+function updateSmartNotifications(analytics) {
+    const notifications = [];
+    const stats = analytics;
+    
+    // Usage warnings
+    if (stats.remaining.daily_insights <= 1) {
+        notifications.push({
+            type: 'warning',
+            icon: 'fas fa-clock',
+            message: `Only ${stats.remaining.daily_insights} daily insights remaining. Plan your research wisely!`
+        });
+    }
+    
+    // Streak encouragement
+    if (analytics.quick_stats.current_streak >= 3) {
+        notifications.push({
+            type: 'success',
+            icon: 'fas fa-fire',
+            message: `🔥 ${analytics.quick_stats.current_streak} day streak! Keep up the great research habits!`
+        });
+    }
+    
+    // Efficiency improvements
+    if (analytics.quick_stats.efficiency_score < 60) {
+        notifications.push({
+            type: 'info',
+            icon: 'fas fa-lightbulb',
+            message: 'Try providing more specific instructions to improve your research efficiency.'
+        });
+    }
+    
+    // Render notifications
+    const container = document.getElementById('smart-notifications');
+    container.innerHTML = notifications.map(notif => `
+        <div class="alert alert-${notif.type} alert-dismissible fade show mb-2">
+            <i class="${notif.icon} me-2"></i>
+            ${notif.message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `).join('');
+}
+
+function drawActivityChart(dailyData) {
+    const canvas = document.getElementById('activityChart');
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    const width = canvas.width;
+    const height = canvas.height;
+    
+    // Clear canvas
+    ctx.clearRect(0, 0, width, height);
+    
+    // Find max value for scaling
+    const maxInsights = Math.max(...dailyData.map(d => d.insights), 1);
+    
+    // Draw bars
+    const barWidth = width / dailyData.length - 10;
+    dailyData.forEach((day, index) => {
+        const barHeight = (day.insights / maxInsights) * (height - 40);
+        const x = index * (width / dailyData.length) + 5;
+        const y = height - barHeight - 20;
+        
+        // Draw bar
+        ctx.fillStyle = day.insights > 0 ? '#667eea' : '#e9ecef';
+        ctx.fillRect(x, y, barWidth, barHeight);
+        
+        // Draw day label
+        ctx.fillStyle = '#6c757d';
+        ctx.font = '12px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(day.day_name, x + barWidth/2, height - 5);
+        
+        // Draw value
+        if (day.insights > 0) {
+            ctx.fillStyle = '#495057';
+            ctx.font = 'bold 10px sans-serif';
+            ctx.fillText(day.insights.toString(), x + barWidth/2, y - 5);
+        }
+    });
+}
+
+// Helper functions
+function getProgressBarColor(percentage) {
+    if (percentage > 80) return 'bg-danger';
+    if (percentage > 60) return 'bg-warning';
+    return 'bg-success';
+}
+
+function formatNumber(num) {
+    if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+    if (num >= 1000) return (num / 1000).toFixed(1) + 'k';
+    return num.toString();
+}
+
+function generateMonthlyTrendHTML(trend) {
+    const trendIcon = trend.direction === 'up' ? '📈' : trend.direction === 'down' ? '📉' : '➡️';
+    const trendColor = trend.direction === 'up' ? 'text-success' : trend.direction === 'down' ? 'text-danger' : 'text-muted';
+    
+    return `
+        <div class="trend-section mb-3">
+            <h6 class="text-muted mb-2">Monthly Trend</h6>
+            <div class="d-flex align-items-center">
+                <span class="me-2" style="font-size: 1.2rem;">${trendIcon}</span>
+                <span class="${trendColor} fw-semibold">
+                    ${trend.direction === 'up' ? 'Increasing' : trend.direction === 'down' ? 'Decreasing' : 'Stable'} usage
+                </span>
+            </div>
+        </div>
+    `;
+}
+
+function showErrorMessage() {
+    document.getElementById('usage-stats-container').innerHTML = `
+        <div class="text-center py-4">
+            <i class="fas fa-exclamation-triangle text-warning fa-2x mb-3"></i>
+            <p class="text-muted">Failed to load analytics</p>
+            <button class="btn btn-sm btn-outline-primary" onclick="loadDashboardAnalytics()">
+                <i class="fas fa-sync-alt me-1"></i>Retry
+            </button>
+        </div>
+    `;
+}
+
+// Load on page ready
+document.addEventListener('DOMContentLoaded', function() {
+    loadUserData();
+    loadDashboardAnalytics();
+    
+    // Refresh every 2 minutes
+    setInterval(loadDashboardAnalytics, 120000);
 });
 </script>
 
@@ -317,6 +530,86 @@ document.addEventListener('DOMContentLoaded', function() {
     border-radius: 15px;
     margin-bottom: 2rem;
 }
+
+.stats-card {
+    border-radius: 15px;
+    padding: 1.5rem;
+    color: white;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s ease;
+}
+
+.stats-card:hover {
+    transform: translateY(-5px);
+}
+
+.stats-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 100px;
+    height: 100px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    transform: translate(30px, -30px);
+}
+
+.stats-icon {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    font-size: 2rem;
+    opacity: 0.3;
+}
+
+.stats-content h3 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.stats-content p {
+    font-size: 0.9rem;
+    margin: 0;
+    opacity: 0.9;
+}
+
+.chart-container {
+    height: 200px;
+    margin: 1rem 0;
+}
+
+.activity-heatmap {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+    margin: 1rem 0;
+}
+
+.heatmap-day {
+    aspect-ratio: 1;
+    border-radius: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: white;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.heatmap-day:hover {
+    transform: scale(1.1);
+}
+
+.heatmap-day.level-0 { background: #ebedf0; color: #666; }
+.heatmap-day.level-1 { background: #9be9a8; }
+.heatmap-day.level-2 { background: #40c463; }
+.heatmap-day.level-3 { background: #30a14e; }
+.heatmap-day.level-4 { background: #216e39; }
 
 .card {
     border: none;
@@ -374,6 +667,23 @@ code {
 
 .activity-list {
     min-height: 150px;
+}
+
+.bg-gradient-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.progress-item {
+    margin-bottom: 1.5rem;
+}
+
+.recommendations-section .alert {
+    border-radius: 8px;
+}
+
+.alert-sm {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
 }
 </style>
 {% endblock %} 
