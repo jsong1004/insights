@@ -19,7 +19,10 @@ def create_sample_activities():
         firestore_manager = UserFirestoreManager()
         
         # Sample user ID (replace with a real one from your system)
-        user_id = "test-user-123"
+        # You can pass a user ID as command line argument or it will use this default
+        import sys
+        user_id = sys.argv[1] if len(sys.argv) > 1 else "test-user-123"
+        print(f"🎯 Using user ID: {user_id}")
         
         # Sample activities with different types and timestamps
         sample_activities = [

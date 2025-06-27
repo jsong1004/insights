@@ -369,11 +369,64 @@ class AIInsightsCrew:
             # Try to get token usage from crew usage metrics (CrewAI 0.80+)
             if hasattr(crew, 'usage_metrics') and crew.usage_metrics:
                 logger.info(f"Found usage_metrics: {crew.usage_metrics}")
-                for metric in crew.usage_metrics:
-                    if hasattr(metric, 'total_tokens'):
-                        total_tokens += metric.total_tokens
-                    elif hasattr(metric, 'prompt_tokens') and hasattr(metric, 'completion_tokens'):
-                        total_tokens += metric.prompt_tokens + metric.completion_tokens
+                logger.info(f"Usage metrics type: {type(crew.usage_metrics)}")
+                
+                # Handle different usage_metrics formats
+                if isinstance(crew.usage_metrics, dict):
+                    # Direct dictionary format
+                    total_tokens = crew.usage_metrics.get('total_tokens', 0)
+                    if total_tokens == 0:
+                        # Fallback: calculate from prompt + completion tokens
+                        prompt_tokens = crew.usage_metrics.get('prompt_tokens', 0)
+                        completion_tokens = crew.usage_metrics.get('completion_tokens', 0)
+                        total_tokens = prompt_tokens + completion_tokens
+                elif isinstance(crew.usage_metrics, list):
+                    # List of metric objects
+                    for metric in crew.usage_metrics:
+                        if hasattr(metric, 'total_tokens'):
+                            total_tokens += metric.total_tokens
+                        elif hasattr(metric, 'prompt_tokens') and hasattr(metric, 'completion_tokens'):
+                            total_tokens += metric.prompt_tokens + metric.completion_tokens
+                        elif isinstance(metric, dict):
+                            # Dictionary within list
+                            metric_total = metric.get('total_tokens', 0)
+                            if metric_total == 0:
+                                metric_total = metric.get('prompt_tokens', 0) + metric.get('completion_tokens', 0)
+                            total_tokens += metric_total
+                else:
+                    # Single metric object - try different approaches
+                    logger.info(f"Attempting to extract from single object: {dir(crew.usage_metrics)}")
+                    
+                    if hasattr(crew.usage_metrics, 'total_tokens'):
+                        total_tokens = crew.usage_metrics.total_tokens
+                        logger.info(f"Found total_tokens attribute: {total_tokens}")
+                    elif hasattr(crew.usage_metrics, 'prompt_tokens') and hasattr(crew.usage_metrics, 'completion_tokens'):
+                        total_tokens = crew.usage_metrics.prompt_tokens + crew.usage_metrics.completion_tokens
+                        logger.info(f"Calculated from prompt ({crew.usage_metrics.prompt_tokens}) + completion ({crew.usage_metrics.completion_tokens}) = {total_tokens}")
+                    else:
+                        # Try to convert to string and parse (fallback)
+                        usage_str = str(crew.usage_metrics)
+                        logger.info(f"Attempting to parse from string: {usage_str}")
+                        import re
+                        
+                        # Look for total_tokens=NUMBER pattern
+                        total_match = re.search(r'total_tokens=(\d+)', usage_str)
+                        if total_match:
+                            total_tokens = int(total_match.group(1))
+                            logger.info(f"Parsed total_tokens from string: {total_tokens}")
+                        else:
+                            # Look for prompt_tokens and completion_tokens
+                            prompt_match = re.search(r'prompt_tokens=(\d+)', usage_str)
+                            completion_match = re.search(r'completion_tokens=(\d+)', usage_str)
+                            if prompt_match and completion_match:
+                                prompt_tokens = int(prompt_match.group(1))
+                                completion_tokens = int(completion_match.group(1))
+                                total_tokens = prompt_tokens + completion_tokens
+                                logger.info(f"Parsed from string - prompt: {prompt_tokens}, completion: {completion_tokens}, total: {total_tokens}")
+                
+                if total_tokens > 0:
+                    logger.info(f"✅ Successfully extracted actual token usage: {total_tokens}")
+                    return total_tokens
             
             # Try to get from crew._token_process (newer CrewAI versions)
             elif hasattr(crew, '_token_process') and crew._token_process:
