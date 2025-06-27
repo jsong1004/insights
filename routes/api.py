@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify, session, request
+from flask import Blueprint, jsonify, session, request, current_app
 from core.insights_manager import FirestoreManager
 from auth.firebase_auth import login_required
 
@@ -69,3 +69,25 @@ def api_shared_insights():
     """API endpoint to get all shared insights"""
     insights_list = insights_firestore_manager.get_shared_insights()
     return jsonify([insights.model_dump() for insights in insights_list])
+
+@api_bp.route('/usage-stats')
+@login_required
+def get_usage_stats():
+    """Get current user's usage statistics"""
+    try:
+        user_id = session.get('user_id')
+        firestore_manager = current_app.extensions.get('firestore_manager')
+        
+        stats = firestore_manager.get_usage_stats(user_id)
+        
+        return jsonify({
+            'success': True,
+            'stats': stats
+        })
+        
+    except Exception as e:
+        logger.error(f"Error getting usage stats: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Failed to retrieve usage statistics'
+        }), 500

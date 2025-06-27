@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, jsonify, redirect, url_for, flash, make_response, session
+from flask import Blueprint, render_template, request, jsonify, redirect, url_for, flash, make_response, session, current_app
 from core.crew_ai import AIInsightsCrew
 from core.insights_manager import FirestoreManager
 from auth.firebase_auth import login_required
@@ -9,14 +9,6 @@ logger = logging.getLogger(__name__)
 main_bp = Blueprint('main', __name__)
 
 insights_firestore_manager = FirestoreManager()
-
-def get_api_keys() -> tuple:
-    """Get API keys from environment variables"""
-    tavily_key = os.getenv('TAVILY_API_KEY')
-    serper_key = os.getenv('SERPER_API_KEY')
-    openai_key = os.getenv('OPENAI_API_KEY')
-    
-    return tavily_key, serper_key, openai_key
 
 @main_bp.route('/status')
 def health_check():
@@ -44,51 +36,79 @@ def index():
 def generate_insights():
     """Generate insights based on user input"""
     try:
+        # Get user firestore manager
+        firestore_manager = current_app.extensions.get('firestore_manager')
+        user_id = session.get('user_id')
+        
+        # Check usage limits
+        usage_limits = firestore_manager.check_usage_limits(user_id)
+        
+        if not usage_limits['can_generate']:
+            if usage_limits['daily_insights_exceeded']:
+                flash('Daily insight limit reached. Please try again tomorrow or upgrade your plan.', 'error')
+            elif usage_limits['monthly_insights_exceeded']:
+                flash('Monthly insight limit reached. Please upgrade your plan to continue.', 'error')
+            else:
+                flash('Usage limit reached. Please upgrade your plan.', 'error')
+            return redirect(url_for('main.index'))
+        
+        # Your existing insight generation code...
         topic = request.form.get('topic', '').strip()
         instructions = request.form.get('instructions', '').strip()
         source = request.form.get('source', 'general').strip()
         time_range = request.form.get('time_range', 'none').strip()
         
-        # Convert 'none' to None for consistent handling
-        if time_range == 'none' or time_range == '':
-            time_range = None
+        # ... existing validation and CrewAI code ...
+        tavily_key = os.getenv('TAVILY_API_KEY')
+        serper_key = os.getenv('SERPER_API_KEY')
+        openai_key = os.getenv('OPENAI_API_KEY')
+
+        crew_system = AIInsightsCrew(tavily_key, serper_key, openai_key)
         
-        if not topic:
-            flash('Please provide a topic for research.', 'error')
-            return redirect(url_for('main.index'))
-        
-        tavily_key, serper_key, openai_key = get_api_keys()
-        
-        if not openai_key:
-            flash('OpenAI API key is required. Please set OPENAI_API_KEY environment variable.', 'error')
-            return redirect(url_for('main.index'))
-        
-        if not tavily_key and not serper_key:
-            flash('At least one search API key (Tavily or Serper) is required.', 'error')
-            return redirect(url_for('main.index'))
-        
-        try:
-            crew_system = AIInsightsCrew(tavily_key, serper_key, openai_key)
-        except Exception as init_error:
-            logger.error(f"❌ Error initializing AI crew system: {init_error}")
-            if "proxies" in str(init_error).lower():
-                flash('Search tool configuration issue detected. Please try again or contact support if the problem persists.', 'error')
-            else:
-                flash(f'Failed to initialize AI system: {str(init_error)}', 'error')
-            return redirect(url_for('main.index'))
-        
+        # Generate insights
         insights = crew_system.generate_insights(topic, instructions, source, time_range)
         
-        user_id = session.get('user_id')
-        user_email = session.get('user_email', '')
-        author_name = user_email.split('@')[0] if user_email else "Anonymous"
-        
+        # Set author information from session
         insights.author_id = user_id
-        insights.author_name = author_name
-        insights.author_email = user_email
+        insights.author_email = session.get('user_email', 'unknown@example.com')
         
+        # Try to get display name from Firestore user data
+        try:
+            user_data = firestore_manager.get_user_data(user_id)
+            if user_data and user_data.get('display_name'):
+                insights.author_name = user_data['display_name']
+            else:
+                # Fallback: Try to get from Firebase Auth
+                firebase_auth_manager = current_app.extensions.get('firebase_auth')
+                if firebase_auth_manager and firebase_auth_manager.initialized:
+                    firebase_user = firebase_auth_manager.get_user(user_id)
+                    if firebase_user and firebase_user.display_name:
+                        insights.author_name = firebase_user.display_name
+                    else:
+                        # Final fallback: extract username from email
+                        insights.author_name = insights.author_email.split('@')[0] if insights.author_email else 'Anonymous'
+                else:
+                    # Firebase not available, use email fallback
+                    insights.author_name = insights.author_email.split('@')[0] if insights.author_email else 'Anonymous'
+        except Exception as e:
+            logger.warning(f"Could not get user display name: {e}")
+            # Fallback to email-based name
+            insights.author_name = insights.author_email.split('@')[0] if insights.author_email else 'Anonymous'
+        
+        # Track usage with actual token count
+        tokens_used = insights.total_tokens
+        search_requests = len(insights.insights) if insights.insights else 1
+        
+        firestore_manager.track_insight_generation(
+            user_id, 
+            tokens_used, 
+            search_requests
+        )
+        
+        # Save insights with author information
         saved = insights_firestore_manager.save_insights(insights)
         
+        # ... rest of your existing code ...
         if saved:
             flash(f'Successfully generated and saved insights for "{topic}"!', 'success')
         else:

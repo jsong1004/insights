@@ -51,6 +51,63 @@
 </div>
 {% endif %}
 
+{% if session.user_id %}
+<!-- Add this after the authentication notice -->
+<div id="usage-warning-container"></div>
+
+<script>
+// Check usage limits on page load
+async function checkUsageLimits() {
+    try {
+        const response = await fetch('/api/usage-stats');
+        const data = await response.json();
+        
+        if (data.success) {
+            const stats = data.stats;
+            const container = document.getElementById('usage-warning-container');
+            
+            // Show warnings if approaching limits
+            if (stats.remaining.daily_insights === 0) {
+                container.innerHTML = `
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <i class="fas fa-exclamation-circle me-2"></i>
+                        <strong>Daily limit reached!</strong> You've used all ${stats.limits.daily_insights} daily insights. 
+                        Come back tomorrow or <a href="/billing/plans" class="alert-link">upgrade your plan</a>.
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                `;
+            } else if (stats.remaining.monthly_insights === 0) {
+                container.innerHTML = `
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <i class="fas fa-exclamation-circle me-2"></i>
+                        <strong>Monthly limit reached!</strong> You've used all ${stats.limits.monthly_insights} monthly insights. 
+                        <a href="/billing/plans" class="alert-link">Upgrade your plan</a> to continue.
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                `;
+            } else if (stats.usage_percentage.insights > 80) {
+                container.innerHTML = `
+                    <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        You've used ${stats.current_usage.monthly_insights} of ${stats.limits.monthly_insights} monthly insights (${Math.round(stats.usage_percentage.insights)}%). 
+                        <a href="/auth/dashboard" class="alert-link">View usage details</a>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                `;
+            }
+        }
+    } catch (error) {
+        console.error('Failed to check usage limits:', error);
+    }
+}
+
+// Check on page load if user is logged in
+if (document.getElementById('usage-warning-container')) {
+    checkUsageLimits();
+}
+</script>
+{% endif %}
+
 <!-- Insights Generation Form -->
 <div class="insight-card {% if not session.user_id %}opacity-50{% endif %}">
     <h2 class="insight-title">

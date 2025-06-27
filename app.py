@@ -1,8 +1,9 @@
-from flask import Flask
+from flask import Flask, session
 from dotenv import load_dotenv
 import logging
 import os
 import re
+from datetime import datetime, timedelta, timezone
 
 # Load environment variables
 load_dotenv()
@@ -55,6 +56,36 @@ def create_app():
     from routes.api import api_bp
     app.register_blueprint(main_bp)
     app.register_blueprint(api_bp)
+
+    @app.before_request
+    def before_request():
+        session.permanent = True
+        app.permanent_session_lifetime = timedelta(minutes=15)
+        session.modified = True
+        if 'user_id' in session and 'last_activity' in session:
+            last_activity = session['last_activity']
+            # Ensure both datetimes are timezone-aware for proper comparison
+            if isinstance(last_activity, str):
+                # If last_activity is stored as string, parse it
+                try:
+                    last_activity = datetime.fromisoformat(last_activity.replace('Z', '+00:00'))
+                except (ValueError, AttributeError):
+                    # If parsing fails, reset the session
+                    session.pop('user_id', None)
+                    session.pop('last_activity', None)
+                    return
+            elif last_activity.tzinfo is None:
+                # If naive datetime, assume UTC
+                last_activity = last_activity.replace(tzinfo=timezone.utc)
+            
+            # Use timezone-aware current time
+            current_time = datetime.now(timezone.utc)
+            if current_time - last_activity > app.permanent_session_lifetime:
+                session.pop('user_id', None)
+                session.pop('last_activity', None)
+        if 'user_id' in session:
+            # Store timezone-aware datetime
+            session['last_activity'] = datetime.now(timezone.utc)
 
     return app
 

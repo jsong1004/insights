@@ -1,0 +1,9 @@
+{
+  "firestore": [
+    {
+      "target": "ai-biz",
+      "rules": "firestore.ai-biz.rules",
+      "database": "ai-biz"
+    }
+  ]
+}

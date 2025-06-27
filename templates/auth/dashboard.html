@@ -41,36 +41,25 @@
             </div>
         </div>
         
-        <!-- Usage Stats Card -->
-        <div class="col-md-6 col-lg-4 mb-4">
-            <div class="card h-100 shadow-sm">
-                <div class="card-body">
-                    <h5 class="card-title">
-                        <i class="fas fa-chart-bar text-success me-2"></i>
-                        Usage Stats
-                    </h5>
-                    
-                    <div class="usage-stats">
-                        {% if user_data and user_data.usage %}
-                            <p><strong>Insights Generated:</strong> {{ user_data.usage.insights_generated or 0 }}</p>
-                            <p><strong>Insights Remaining:</strong> {{ user_data.usage.insights_remaining or 0 }}</p>
-                            <div class="progress">
-                                {% set used = user_data.usage.insights_generated or 0 %}
-                                {% set total = (user_data.usage.insights_generated or 0) + (user_data.usage.insights_remaining or 0) %}
-                                {% set percentage = (used / total * 100) if total > 0 else 0 %}
-                                <div class="progress-bar" role="progressbar" style="width: {{ percentage }}%" 
-                                     aria-valuenow="{{ percentage }}" aria-valuemin="0" aria-valuemax="100">
-                                    {{ "%.0f"|format(percentage) }}%
-                                </div>
-                            </div>
-                        {% else %}
-                            <p class="text-muted">Usage data not available</p>
-                            <small>Data will appear after your first insight generation</small>
-                        {% endif %}
+        <!-- Update the Usage Stats Card -->
+<div class="col-md-6 col-lg-4 mb-4">
+    <div class="card h-100 shadow-sm">
+        <div class="card-body">
+            <h5 class="card-title">
+                <i class="fas fa-chart-bar text-success me-2"></i>
+                Usage Stats
+            </h5>
+            
+            <div class="usage-stats" id="usage-stats-container">
+                <div class="text-center py-3">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
                     </div>
                 </div>
             </div>
         </div>
+    </div>
+</div>
         
         <!-- Subscription Card -->
         <div class="col-md-6 col-lg-4 mb-4">
@@ -207,6 +196,116 @@ async function logout() {
 // Load fresh user data on page load
 document.addEventListener('DOMContentLoaded', function() {
     loadUserData();
+});
+
+async function loadUsageStats() {
+    try {
+        const response = await fetch('/api/usage-stats');
+        const data = await response.json();
+        
+        if (data.success) {
+            const stats = data.stats;
+            const container = document.getElementById('usage-stats-container');
+            
+            container.innerHTML = `
+                <!-- Monthly Insights -->
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="fw-semibold">Monthly Insights</span>
+                        <span class="text-muted">${stats.current_usage.monthly_insights}/${stats.limits.monthly_insights}</span>
+                    </div>
+                    <div class="progress" style="height: 10px;">
+                        <div class="progress-bar ${stats.usage_percentage.insights > 80 ? 'bg-danger' : stats.usage_percentage.insights > 60 ? 'bg-warning' : 'bg-success'}" 
+                             role="progressbar" 
+                             style="width: ${stats.usage_percentage.insights}%"
+                             aria-valuenow="${stats.usage_percentage.insights}" 
+                             aria-valuemin="0" 
+                             aria-valuemax="100">
+                        </div>
+                    </div>
+                    <small class="text-muted">${stats.remaining.monthly_insights} remaining</small>
+                </div>
+                
+                <!-- Token Usage -->
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="fw-semibold">Token Usage</span>
+                        <span class="text-muted">${(stats.current_usage.monthly_tokens / 1000).toFixed(1)}k/${(stats.limits.monthly_tokens / 1000).toFixed(0)}k</span>
+                    </div>
+                    <div class="progress" style="height: 10px;">
+                        <div class="progress-bar ${stats.usage_percentage.tokens > 80 ? 'bg-danger' : stats.usage_percentage.tokens > 60 ? 'bg-warning' : 'bg-info'}" 
+                             role="progressbar" 
+                             style="width: ${stats.usage_percentage.tokens}%"
+                             aria-valuenow="${stats.usage_percentage.tokens}" 
+                             aria-valuemin="0" 
+                             aria-valuemax="100">
+                        </div>
+                    </div>
+                    <small class="text-muted">${((stats.limits.monthly_tokens - stats.current_usage.monthly_tokens) / 1000).toFixed(0)}k tokens remaining</small>
+                </div>
+                
+                <!-- Daily Insights -->
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="fw-semibold">Today's Insights</span>
+                        <span class="text-muted">${stats.current_usage.daily_insights}/${stats.limits.daily_insights}</span>
+                    </div>
+                    <div class="progress" style="height: 6px;">
+                        <div class="progress-bar bg-primary" 
+                             role="progressbar" 
+                             style="width: ${(stats.current_usage.daily_insights / stats.limits.daily_insights * 100)}%">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 7-Day Activity Chart -->
+                <div class="mt-4">
+                    <h6 class="text-muted mb-2">Last 7 Days Activity</h6>
+                    <div class="d-flex align-items-end" style="height: 60px;">
+                        ${stats.daily_breakdown.map(day => {
+                            const maxInsights = Math.max(...stats.daily_breakdown.map(d => d.insights), 1);
+                            const height = (day.insights / maxInsights * 100) || 0;
+                            return `
+                                <div class="flex-fill text-center position-relative" title="${day.date}: ${day.insights} insights">
+                                    <div class="bg-primary bg-opacity-75" 
+                                         style="height: ${height}%; min-height: ${day.insights > 0 ? '4px' : '0'}; 
+                                                margin: 0 2px; border-radius: 2px 2px 0 0;">
+                                    </div>
+                                    <small class="text-muted" style="font-size: 10px;">${day.day}</small>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+                
+                ${stats.usage_percentage.insights > 80 || stats.usage_percentage.tokens > 80 ? `
+                    <div class="alert alert-warning alert-sm mt-3 mb-0 py-2 px-3">
+                        <small>
+                            <i class="fas fa-exclamation-triangle me-1"></i>
+                            You're approaching your limits. 
+                            <a href="/billing/plans" class="alert-link">Upgrade plan</a>
+                        </small>
+                    </div>
+                ` : ''}
+            `;
+        }
+    } catch (error) {
+        console.error('Failed to load usage stats:', error);
+        document.getElementById('usage-stats-container').innerHTML = `
+            <p class="text-muted">Failed to load usage data</p>
+            <button class="btn btn-sm btn-outline-primary" onclick="loadUsageStats()">
+                <i class="fas fa-sync-alt me-1"></i>Retry
+            </button>
+        `;
+    }
+}
+
+// Load usage stats on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadUsageStats();
+    
+    // Refresh stats every 30 seconds
+    setInterval(loadUsageStats, 30000);
 });
 </script>
 
