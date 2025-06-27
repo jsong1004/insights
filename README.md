@@ -2,7 +2,7 @@
 
 A powerful social web application that uses CrewAI's multi-agent system to generate intelligent insights on any topic. Users can sign up, log in, and share insights with the community while building their personal research library. Features comprehensive usage statistics tracking, automated session timeout management, and plan-based subscription limits.
 
-**Latest Update (June 2025)**: Now featuring comprehensive usage statistics tracking with multi-tier subscription plans, automated 15-minute session timeout management, advanced search parameters with source type filtering (General, News, Finance & Business) and time range controls (None, Day, Week, Month, Year), enhanced error handling for search tool compatibility, robust fallback mechanisms, and a health check endpoint for monitoring. Running on Flask 3.1.1 with CrewAI 0.134.0 for enhanced performance, user management, and collaborative insights.
+**Latest Update (June 2025)**: Now featuring comprehensive usage statistics tracking with multi-tier subscription plans, automated 15-minute session timeout management, advanced search parameters with source type filtering (General, News, Finance & Business) and time range controls (None, Day, Week, Month, Year), enhanced error handling for search tool compatibility, robust fallback mechanisms, and a health check endpoint for monitoring. **NEW**: Interactive My Insights table with sortable columns (Title, Tokens, Date) replacing Recent Activity for better insights management. Running on Flask 3.1.1 with CrewAI 0.134.0 for enhanced performance, user management, and collaborative insights.
 
 ## ✨ Features
 
@@ -45,7 +45,7 @@ A powerful social web application that uses CrewAI's multi-agent system to gener
 - **Beautiful UI**: Modern gradient design with smooth animations and accessibility features
 - **Enhanced Security**: Latest Flask security features with Firebase authentication
 
-### 📊 Usage Statistics & Analytics (NEW)
+### 📊 Usage Statistics & Analytics
 - **Comprehensive Tracking**: Multi-level usage metrics (daily, monthly, total)
 - **Token-based Metering**: Accurate AI usage cost tracking with intelligent estimation
 - **Plan-based Limits**: Free (20/month), Basic (100/month), Pro (500/month), Enterprise (unlimited)
@@ -53,6 +53,15 @@ A powerful social web application that uses CrewAI's multi-agent system to gener
 - **Proactive Warnings**: Usage alerts when approaching limits (80%+ quota used)
 - **Historical Data**: 30-day rolling usage history with monthly breakdowns
 - **Automated Management**: Monthly reset via Firebase Cloud Functions
+
+### 📋 My Insights Management (NEW)
+- **Interactive Table**: Sortable table displaying all user's generated insights
+- **Smart Sorting**: Click column headers to sort by Title (alphabetical), Tokens (numerical), or Date (chronological)
+- **Rich Information**: View insight topics, token usage, processing time, and creation dates
+- **Direct Actions**: Quick access to view full insights and toggle sharing status
+- **Visual Feedback**: Modern table design with hover effects and sort indicators
+- **Empty State Handling**: Friendly prompts for new users to generate their first insight
+- **Real-time Updates**: Instant table updates when sharing status changes
 
 ### 📊 Intelligent Features
 - **Advanced Confidence Scoring**: Enhanced validation algorithms with detailed metrics
@@ -198,7 +207,11 @@ docker-compose -f docker-compose.insight.yml up
 - **Privacy Control**: Authors can make their insights private anytime
 
 ### 5. Manage Your Content
-- **View Your Insights**: Your insights appear in the sidebar with special indicators
+- **My Insights Table**: View all your insights in an organized, sortable table on the dashboard
+- **Smart Sorting**: Click column headers to sort by Title, Tokens used, or Date created
+- **Quick Actions**: View full insights or toggle sharing status directly from the table
+- **Content Overview**: See insight count, token usage, and processing time at a glance
+- **View Your Insights**: Your insights also appear in the sidebar with special indicators
 - **Control Privacy**: Toggle sharing status on insights you authored
 - **Delete Content**: Only you can delete your own insights
 - **Download Reports**: Generate HTML reports with improved styling
@@ -282,12 +295,14 @@ docker-compose -f docker-compose.insight.yml up
 - `GET /insights/<id>` - View specific insights with social data
 - `POST /delete/<id>` - Delete insights (owner only)
 - `GET /api/shared-insights` - JSON API for public insights
+- `GET /api/my-insights` - Get current user's insights for dashboard table (requires login)
 - `GET /api/usage-stats` - Get user's current usage statistics and limits
+- `GET /api/dashboard-analytics` - Comprehensive dashboard analytics and metrics
 - `POST /api/insights/<id>/like` - Like/unlike insights (requires login)
 - `POST /api/insights/<id>/share` - Toggle privacy (author only)
 - `POST /auth/api/login` - Firebase authentication endpoint with session setup
 - `POST /auth/api/signup` - User registration endpoint with session setup
-- `GET /auth/dashboard` - User account dashboard with usage analytics
+- `GET /auth/dashboard` - User account dashboard with usage analytics and My Insights table
 - `GET /auth/profile` - User profile management
 - `GET /debug/insights` - Debug endpoint for troubleshooting
 - `GET /status` - Health check and system status
@@ -455,6 +470,8 @@ All features have been thoroughly tested:
 18. **Dependency Management**: ✅ All required packages properly installed
 19. **Usage Dashboard**: ✅ Real-time analytics with visual progress tracking
 20. **Plan-based Limits**: ✅ Quota enforcement and proactive warnings
+21. **My Insights Table**: ✅ Interactive sortable table with column sorting functionality
+22. **Insights Management**: ✅ View, sort, and manage user insights efficiently
 
 ### Authentication Testing
 - [x] Email/password registration and login
@@ -507,6 +524,18 @@ All features have been thoroughly tested:
 - [x] User-friendly error messages for search tool issues
 - [x] Comprehensive logging for debugging search problems
 
+### My Insights Table Testing
+- [x] Table loads automatically on dashboard access
+- [x] Column sorting functionality (Title, Tokens, Date)
+- [x] Sort direction indicators with visual feedback
+- [x] Empty state display with call-to-action
+- [x] Loading states during data fetch
+- [x] Error handling with retry functionality
+- [x] View insight button navigation
+- [x] Share toggle functionality with immediate updates
+- [x] Responsive table design on all screen sizes
+- [x] User-specific data filtering (author_id based)
+
 ## 🆘 Troubleshooting (Updated June 2025)
 
 ### Common Issues
@@ -533,6 +562,13 @@ All features have been thoroughly tested:
 - **Form not submitting**: Check browser console for JavaScript errors
 - **Double submission**: The protection is working correctly - wait for processing
 - **Empty topic error**: Ensure the topic field has content before submitting
+
+#### My Insights Table Issues
+- **Table not loading**: Check authentication status and refresh the page
+- **Sorting not working**: Ensure JavaScript is enabled and try clearing browser cache
+- **Empty table despite having insights**: Verify you're logged in with the correct account
+- **Share toggle not responding**: Check network connection and try again
+- **View button not working**: Ensure insight ID is valid and try refreshing the page
 
 #### Firebase Connection Issues
 - **"Failed to get credentials"**: Ensure service account key is properly configured
@@ -617,4 +653,4 @@ All features have been thoroughly tested:
 
 **Powered by Firebase Authentication, CrewAI 0.134.0 Multi-Agent System, Flask 3.1.1 & Docker** 🔐🤖✨🐳
 
-*Last Updated: June 2025 - Now featuring advanced search parameters with source type filtering (General, News, Finance & Business) and time range controls, enhanced search tool error handling with robust fallback mechanisms, health monitoring endpoint, and production-ready infrastructure for collaborative AI insights generation.* 
+*Last Updated: June 2025 - Now featuring advanced search parameters with source type filtering (General, News, Finance & Business) and time range controls, enhanced search tool error handling with robust fallback mechanisms, health monitoring endpoint, interactive My Insights table with sortable columns for better insights management, and production-ready infrastructure for collaborative AI insights generation.* 
