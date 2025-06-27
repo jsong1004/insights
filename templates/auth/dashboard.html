@@ -75,32 +75,8 @@
     </div>
     
     <div class="row">
-        <!-- User Info Card -->
-        <div class="col-md-6 col-lg-4 mb-4">
-            <div class="card h-100 shadow-sm">
-                <div class="card-body">
-                    <h5 class="card-title">
-                        <i class="fas fa-user text-info me-2"></i>
-                        Account Info
-                    </h5>
-                    
-                    <div class="user-info">
-                        <p><strong>Email:</strong> {{ session.user_email or 'Not available' }}</p>
-                        <p><strong>Email Verified:</strong> 
-                            {% if session.email_verified %}
-                                <span class="badge bg-success">Verified</span>
-                            {% else %}
-                                <span class="badge bg-warning">Not Verified</span>
-                            {% endif %}
-                        </p>
-                        <p><strong>User ID:</strong> <code>{{ session.user_id[:8] }}...</code></p>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Enhanced Usage Stats Card -->
-        <div class="col-md-8 col-lg-6 mb-4">
+        <!-- Enhanced Usage Stats Card - Now takes full width -->
+        <div class="col-12 mb-4">
             <div class="card h-100 shadow-sm">
                 <div class="card-header bg-gradient-primary text-white">
                     <h5 class="card-title mb-0">
@@ -119,82 +95,10 @@
                 </div>
             </div>
         </div>
-        
-        <!-- Subscription Card -->
-        <div class="col-md-6 col-lg-2 mb-4">
-            <div class="card h-100 shadow-sm">
-                <div class="card-body">
-                    <h5 class="card-title">
-                        <i class="fas fa-crown text-warning me-2"></i>
-                        Subscription
-                    </h5>
-                    
-                    <div class="subscription-info">
-                        {% if user_data and user_data.subscription %}
-                            <p><strong>Plan:</strong> {{ user_data.subscription.plan.title() }}</p>
-                            <p><strong>Status:</strong> 
-                                <span class="badge bg-success">{{ user_data.subscription.status.title() }}</span>
-                            </p>
-                        {% else %}
-                            <p class="text-muted">Free Trial</p>
-                            <p><small>Start generating insights with your free trial credits!</small></p>
-                            <a href="/billing/plans" class="btn btn-outline-primary btn-sm">
-                                <i class="fas fa-star me-1"></i>
-                                Upgrade Plan
-                            </a>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Quick Actions -->
-    <div class="row">
-        <div class="col-12">
-            <div class="card shadow-sm">
-                <div class="card-body">
-                    <h5 class="card-title">
-                        <i class="fas fa-bolt text-primary me-2"></i>
-                        Quick Actions
-                    </h5>
-                    
-                    <div class="row">
-                        <div class="col-md-3 mb-3">
-                            <a href="/" class="btn btn-primary w-100">
-                                <i class="fas fa-brain me-2"></i>
-                                Generate Insights
-                            </a>
-                        </div>
-                        
-                        <div class="col-md-3 mb-3">
-                            <button class="btn btn-outline-secondary w-100" onclick="loadDashboardAnalytics()">
-                                <i class="fas fa-sync-alt me-2"></i>
-                                Refresh Data
-                            </button>
-                        </div>
-                        
-                        <div class="col-md-3 mb-3">
-                            <a href="{{ url_for('auth.profile') }}" class="btn btn-outline-info w-100">
-                                <i class="fas fa-user-cog me-2"></i>
-                                Update Profile
-                            </a>
-                        </div>
-                        
-                        <div class="col-md-3 mb-3">
-                            <button class="btn btn-outline-danger w-100" onclick="logout()">
-                                <i class="fas fa-sign-out-alt me-2"></i>
-                                Logout
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
     </div>
     
     <!-- My Insights Table -->
-    <div class="row mt-4">
+    <div class="row">
         <div class="col-12">
             <div class="card shadow-sm">
                 <div class="card-body">
@@ -598,7 +502,9 @@ function renderInsightsTable() {
     tbody.innerHTML = sortedData.map(insight => `
         <tr>
             <td>
-                <div class="fw-semibold">${escapeHtml(insight.title)}</div>
+                <a href="/insights/${insight.id}" class="text-decoration-none">
+                    <div class="fw-semibold text-primary">${escapeHtml(insight.title)}</div>
+                </a>
                 <small class="text-muted">${insight.total_insights} insights generated</small>
             </td>
             <td>
@@ -611,9 +517,11 @@ function renderInsightsTable() {
             </td>
             <td>
                 <div class="btn-group btn-group-sm">
-                    <a href="/insights/${insight.id}" class="btn btn-outline-primary" title="View Insight">
-                        <i class="fas fa-eye"></i>
-                    </a>
+                    <button onclick="deleteInsight('${insight.id}')" 
+                            class="btn btn-outline-danger" 
+                            title="Delete Insight">
+                        <i class="fas fa-trash"></i>
+                    </button>
                     <button onclick="shareInsight('${insight.id}', ${insight.is_shared})" 
                             class="btn btn-outline-secondary" 
                             title="${insight.is_shared ? 'Unshare' : 'Share'} Insight">
@@ -689,6 +597,56 @@ async function shareInsight(insightId, currentStatus) {
     }
 }
 
+// Add new deleteInsight function after shareInsight function
+async function deleteInsight(insightId) {
+    if (!confirm('Are you sure you want to delete this insight? This action cannot be undone.')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/delete/${insightId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            // Refresh the table
+            loadMyInsights();
+            // Show success message
+            showToast('Insight deleted successfully', 'success');
+        } else {
+            const data = await response.json();
+            alert(data.error || 'Failed to delete insight');
+        }
+    } catch (error) {
+        console.error('Error deleting insight:', error);
+        alert('Failed to delete insight');
+    }
+}
+
+// Add toast notification function (optional enhancement)
+function showToast(message, type = 'info') {
+    // Create toast element
+    const toast = document.createElement('div');
+    toast.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    toast.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(toast);
+    
+    // Auto remove after 3 seconds
+    setTimeout(() => {
+        if (toast.parentNode) {
+            toast.parentNode.removeChild(toast);
+        }
+    }, 3000);
+}
+
 // Utility functions for table formatting
 function escapeHtml(text) {
     const div = document.createElement('div');
@@ -727,8 +685,6 @@ function formatRelativeTime(dateString) {
     }
 }
 
-
-
 function showErrorMessage() {
     document.getElementById('usage-stats-container').innerHTML = `
         <div class="text-center py-4">
@@ -754,8 +710,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         header.style.cursor = 'pointer';
     });
-    
-
     
     // Refresh every 2 minutes
     setInterval(loadDashboardAnalytics, 120000);
@@ -1024,6 +978,31 @@ code {
 
 .activity-list::-webkit-scrollbar-thumb:hover {
     background: #a8a8a8;
+}
+
+/* Enhanced clickable title styling */
+.insights-table a.text-decoration-none:hover .fw-semibold {
+    text-decoration: underline !important;
+    color: #0056b3 !important;
+}
+
+.insights-table .fw-semibold {
+    transition: color 0.2s ease;
+}
+
+/* Button styling improvements */
+.btn-outline-danger:hover {
+    background-color: #dc3545;
+    border-color: #dc3545;
+    color: white;
+}
+
+.btn-group-sm .btn {
+    margin-right: 2px;
+}
+
+.btn-group-sm .btn:last-child {
+    margin-right: 0;
 }
 </style>
 {% endblock %} 
