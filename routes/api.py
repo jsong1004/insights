@@ -116,3 +116,65 @@ def get_dashboard_analytics():
             'success': False,
             'error': 'Failed to retrieve dashboard analytics'
         }), 500
+
+@api_bp.route('/recent-activities')
+@login_required
+def get_recent_activities():
+    """Get recent activities for the current user"""
+    try:
+        user_id = session.get('user_id')
+        limit = request.args.get('limit', 10, type=int)
+        firestore_manager = current_app.extensions.get('firestore_manager')
+        
+        activities = firestore_manager.get_recent_activities(user_id, limit=limit)
+        
+        return jsonify({
+            'success': True,
+            'activities': activities
+        })
+        
+    except Exception as e:
+        logger.error(f"Error getting recent activities: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Failed to retrieve recent activities'
+        }), 500
+
+@api_bp.route('/track-activity', methods=['POST'])
+@login_required
+def track_activity():
+    """Track a user activity"""
+    try:
+        user_id = session.get('user_id')
+        data = request.get_json()
+        
+        activity_type = data.get('type')
+        description = data.get('description')
+        metadata = data.get('metadata', {})
+        
+        if not activity_type or not description:
+            return jsonify({
+                'success': False,
+                'error': 'Activity type and description are required'
+            }), 400
+        
+        firestore_manager = current_app.extensions.get('firestore_manager')
+        success = firestore_manager.track_activity(user_id, activity_type, description, metadata)
+        
+        if success:
+            return jsonify({
+                'success': True,
+                'message': 'Activity tracked successfully'
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': 'Failed to track activity'
+            }), 500
+        
+    except Exception as e:
+        logger.error(f"Error tracking activity: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Failed to track activity'
+        }), 500

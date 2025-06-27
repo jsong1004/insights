@@ -48,6 +48,14 @@ def api_login():
         try:
             from app import firestore_manager
             firestore_manager.update_user_login(decoded_token['uid'])
+            
+            # Track login activity
+            firestore_manager.track_activity(
+                decoded_token['uid'], 
+                'login', 
+                'User logged in',
+                {'email': decoded_token.get('email')}
+            )
         except ImportError:
             logger.warning("Firestore manager not available - skipping login tracking")
         
@@ -114,6 +122,14 @@ def api_signup():
             }
             
             firestore_manager.create_user(decoded_token['uid'], user_data)
+            
+            # Track signup activity
+            firestore_manager.track_activity(
+                decoded_token['uid'], 
+                'signup', 
+                'User signed up',
+                {'email': decoded_token.get('email')}
+            )
         except ImportError:
             logger.warning("Firestore manager not available - skipping user data initialization")
         
@@ -135,6 +151,19 @@ def api_signup():
 def api_logout():
     """API endpoint for logout"""
     user_id = session.get('user_id')
+    
+    # Track logout activity before clearing session
+    if user_id:
+        try:
+            from app import firestore_manager
+            firestore_manager.track_activity(
+                user_id, 
+                'logout', 
+                'User logged out'
+            )
+        except ImportError:
+            logger.warning("Firestore manager not available - skipping logout tracking")
+    
     session.clear()
     logger.info(f"User logout: {user_id}")
     return redirect(url_for('auth.login'))

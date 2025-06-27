@@ -494,6 +494,9 @@ class UserFirestoreManager:
             efficiency_score = self._calculate_efficiency_score(stats)
             avg_processing_time = self._get_average_processing_time(user_id)
             
+            # Get recent activities
+            recent_activities = self.get_recent_activities(user_id, limit=8)
+            
             return {
                 **stats,
                 'quick_stats': {
@@ -504,7 +507,8 @@ class UserFirestoreManager:
                 },
                 'activity_heatmap': self._generate_activity_heatmap(stats['daily_breakdown']),
                 'monthly_trend': self._get_monthly_trend(user_data),
-                'recommendations': self._generate_recommendations(stats)
+                'recommendations': self._generate_recommendations(stats),
+                'recent_activities': recent_activities
             }
         except Exception as e:
             logger.error(f"Error getting dashboard analytics: {e}")
@@ -626,4 +630,167 @@ class UserFirestoreManager:
         elif active_days >= 6:
             recommendations.append("Great consistency! You're building excellent research habits.")
         
-        return recommendations 
+        return recommendations
+
+    def track_activity(self, user_id: str, activity_type: str, description: str, metadata: Dict[str, Any] = None) -> bool:
+        """Track user activity for recent activity feed"""
+        try:
+            if not self.use_firestore or not self.db:
+                logger.warning("Firestore not available - cannot track activity")
+                return False
+            
+            activity_data = {
+                'user_id': user_id,
+                'type': activity_type,
+                'description': description,
+                'timestamp': firestore.SERVER_TIMESTAMP,
+                'metadata': metadata or {}
+            }
+            
+            # Add to activities collection
+            activities_ref = self.db.collection('user_activities')
+            activities_ref.add(activity_data)
+            
+            # Also update user's recent activities array (keep last 10)
+            user_ref = self.db.collection(self.users_collection).document(user_id)
+            
+            @firestore.transactional
+            def update_user_activities(transaction):
+                doc = user_ref.get(transaction=transaction)
+                if doc.exists:
+                    data = doc.to_dict()
+                    recent_activities = data.get('recent_activities', [])
+                    
+                    # Add new activity
+                    new_activity = {
+                        'type': activity_type,
+                        'description': description,
+                        'timestamp': datetime.now().isoformat(),
+                        'metadata': metadata or {}
+                    }
+                    recent_activities.insert(0, new_activity)
+                    
+                    # Keep only last 10 activities
+                    recent_activities = recent_activities[:10]
+                    
+                    transaction.update(user_ref, {
+                        'recent_activities': recent_activities,
+                        'updated_at': firestore.SERVER_TIMESTAMP
+                    })
+                else:
+                    # Create user with initial activity
+                    initial_data = {
+                        'created_at': firestore.SERVER_TIMESTAMP,
+                        'recent_activities': [{
+                            'type': activity_type,
+                            'description': description,
+                            'timestamp': datetime.now().isoformat(),
+                            'metadata': metadata or {}
+                        }]
+                    }
+                    transaction.set(user_ref, initial_data)
+            
+            # Execute transaction
+            transaction = self.db.transaction()
+            update_user_activities(transaction)
+            
+            logger.info(f"✅ Tracked activity for user {user_id}: {activity_type}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error tracking activity for user {user_id}: {e}")
+            return False
+
+    def get_recent_activities(self, user_id: str, limit: int = 10) -> List[Dict[str, Any]]:
+        """Get recent activities for a user"""
+        try:
+            if not self.use_firestore or not self.db:
+                return []
+            
+            user_data = self.get_user_data(user_id)
+            if not user_data:
+                return []
+            
+            recent_activities = user_data.get('recent_activities', [])
+            
+            # Process activities and add relative time
+            processed_activities = []
+            for activity in recent_activities[:limit]:
+                try:
+                    # Parse timestamp
+                    timestamp_str = activity.get('timestamp', '')
+                    if timestamp_str:
+                        activity_time = datetime.fromisoformat(timestamp_str.replace('Z', '+00:00'))
+                        
+                        # Calculate relative time
+                        now = datetime.now()
+                        time_diff = now - activity_time.replace(tzinfo=None)
+                        
+                        if time_diff.days > 0:
+                            relative_time = f"{time_diff.days} day{'s' if time_diff.days > 1 else ''} ago"
+                        elif time_diff.seconds > 3600:
+                            hours = time_diff.seconds // 3600
+                            relative_time = f"{hours} hour{'s' if hours > 1 else ''} ago"
+                        elif time_diff.seconds > 60:
+                            minutes = time_diff.seconds // 60
+                            relative_time = f"{minutes} minute{'s' if minutes > 1 else ''} ago"
+                        else:
+                            relative_time = "Just now"
+                        
+                        activity['relative_time'] = relative_time
+                        activity['formatted_time'] = activity_time.strftime('%I:%M %p')
+                    else:
+                        activity['relative_time'] = "Unknown"
+                        activity['formatted_time'] = "Unknown"
+                    
+                    # Add icon based on activity type
+                    activity['icon'] = self._get_activity_icon(activity.get('type', ''))
+                    activity['color'] = self._get_activity_color(activity.get('type', ''))
+                    
+                    processed_activities.append(activity)
+                    
+                except Exception as parse_error:
+                    logger.warning(f"Error parsing activity timestamp: {parse_error}")
+                    activity['relative_time'] = "Unknown"
+                    activity['formatted_time'] = "Unknown"
+                    activity['icon'] = 'fas fa-circle'
+                    activity['color'] = 'text-muted'
+                    processed_activities.append(activity)
+            
+            return processed_activities
+            
+        except Exception as e:
+            logger.error(f"Error getting recent activities for user {user_id}: {e}")
+            return []
+
+    def _get_activity_icon(self, activity_type: str) -> str:
+        """Get FontAwesome icon for activity type"""
+        icons = {
+            'insight_generated': 'fas fa-brain',
+            'login': 'fas fa-sign-in-alt',
+            'logout': 'fas fa-sign-out-alt',
+            'profile_updated': 'fas fa-user-edit',
+            'subscription_changed': 'fas fa-crown',
+            'limit_reached': 'fas fa-exclamation-triangle',
+            'error': 'fas fa-times-circle',
+            'success': 'fas fa-check-circle',
+            'dashboard_viewed': 'fas fa-tachometer-alt',
+            'insights_viewed': 'fas fa-eye'
+        }
+        return icons.get(activity_type, 'fas fa-circle')
+
+    def _get_activity_color(self, activity_type: str) -> str:
+        """Get CSS color class for activity type"""
+        colors = {
+            'insight_generated': 'text-primary',
+            'login': 'text-success',
+            'logout': 'text-muted',
+            'profile_updated': 'text-info',
+            'subscription_changed': 'text-warning',
+            'limit_reached': 'text-danger',
+            'error': 'text-danger',
+            'success': 'text-success',
+            'dashboard_viewed': 'text-primary',
+            'insights_viewed': 'text-info'
+        }
+        return colors.get(activity_type, 'text-muted') 

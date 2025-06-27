@@ -108,6 +108,25 @@ def generate_insights():
         # Save insights with author information
         saved = insights_firestore_manager.save_insights(insights)
         
+        # Track insight generation activity
+        try:
+            processing_time = getattr(insights, 'processing_time', 0)
+            firestore_manager.track_activity(
+                user_id,
+                'insight_generated',
+                f'Generated insights for "{topic}"',
+                {
+                    'topic': topic,
+                    'tokens': tokens_used,
+                    'processing_time': processing_time,
+                    'source': source,
+                    'insights_count': len(insights.insights) if insights.insights else 0,
+                    'status': 'success' if saved else 'partial'
+                }
+            )
+        except Exception as e:
+            logger.warning(f"Failed to track insight generation activity: {e}")
+        
         # ... rest of your existing code ...
         if saved:
             flash(f'Successfully generated and saved insights for "{topic}"!', 'success')
@@ -128,6 +147,24 @@ def view_insights(insight_id):
     if not insights:
         flash('Insights not found.', 'error')
         return redirect(url_for('main.index'))
+    
+    # Track insights viewing activity (only for logged-in users)
+    user_id = session.get('user_id')
+    if user_id:
+        try:
+            firestore_manager = current_app.extensions.get('firestore_manager')
+            firestore_manager.track_activity(
+                user_id,
+                'insights_viewed',
+                f'Viewed insights: "{insights.topic}"',
+                {
+                    'insight_id': insight_id,
+                    'topic': insights.topic,
+                    'insights_count': len(insights.insights) if insights.insights else 0
+                }
+            )
+        except Exception as e:
+            logger.warning(f"Failed to track insights viewing activity: {e}")
     
     insights_list = insights_firestore_manager.get_all_insights()
     return render_template('insights.html', insights=insights, insights_list=insights_list)
