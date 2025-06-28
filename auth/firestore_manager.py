@@ -356,11 +356,24 @@ class UserFirestoreManager:
         """Get default limits based on subscription plan"""
         limits = {
             'free': {
-                'monthly_insights': 20,
+                'monthly_insights': 150,  # 5 per day * 30 days
                 'monthly_tokens': 100000,
                 'daily_insights': 5,
                 'rate_limit_per_hour': 10
             },
+            'freemium': {
+                'monthly_insights': 1500,  # 50 per day * 30 days
+                'monthly_tokens': 1000000,
+                'daily_insights': 50,
+                'rate_limit_per_hour': 60
+            },
+            'max': {
+                'monthly_insights': -1,  # Unlimited
+                'monthly_tokens': -1,
+                'daily_insights': -1,
+                'rate_limit_per_hour': -1
+            },
+            # Legacy plans for backward compatibility
             'basic': {
                 'monthly_insights': 100,
                 'monthly_tokens': 500000,

@@ -1,0 +1,502 @@
+{% extends "base_auth.html" %}
+
+{% block title %}Membership Plans - AI Insights Generator{% endblock %}
+
+{% block content %}
+<div class="membership-page">
+    <div class="container">
+        <!-- Header Section -->
+        <div class="text-center mb-5">
+            <h1 class="display-4 fw-bold text-gradient">Choose Your Plan</h1>
+            <p class="lead text-muted">Unlock the power of AI insights with our flexible membership options</p>
+        </div>
+
+        <!-- Current Plan Banner -->
+        {% if user_data and user_data.member_type %}
+        <div class="current-plan-banner mb-5">
+            <div class="alert alert-info border-0 shadow-sm">
+                <div class="d-flex align-items-center">
+                    {% if user_data.member_type == 'freemium' %}
+                    <i class="fas fa-star text-warning fs-4 me-3"></i>
+                    <div>
+                        <h6 class="mb-1">You're currently on the <strong>Freemium Plan</strong></h6>
+                        <small class="text-muted">Enjoying 50 insights per day with premium features</small>
+                    </div>
+                    {% elif user_data.member_type == 'max' %}
+                    <i class="fas fa-crown text-warning fs-4 me-3"></i>
+                    <div>
+                        <h6 class="mb-1">You're currently on the <strong>Max Plan</strong></h6>
+                        <small class="text-muted">Unlimited insights with all premium features</small>
+                    </div>
+                    {% else %}
+                    <i class="fas fa-user text-secondary fs-4 me-3"></i>
+                    <div>
+                        <h6 class="mb-1">You're currently on the <strong>Free Plan</strong></h6>
+                        <small class="text-muted">5 insights per day to get you started</small>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Pricing Cards -->
+        <div class="row justify-content-center g-4">
+            <!-- Free Plan -->
+            <div class="col-lg-4 col-md-6">
+                <div class="membership-card h-100 {% if user_data and user_data.member_type == 'free' %}current-plan{% endif %}">
+                    <div class="card-header text-center">
+                        <div class="plan-icon">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <h3 class="plan-name">Free</h3>
+                        <div class="price">
+                            <span class="currency">$</span>
+                            <span class="amount">0</span>
+                            <span class="period">/month</span>
+                        </div>
+                        <p class="plan-description">Perfect for getting started</p>
+                    </div>
+                    
+                    <div class="card-body">
+                        <ul class="features-list">
+                            <li><i class="fas fa-check text-success"></i> 5 insights per day</li>
+                            <li><i class="fas fa-check text-success"></i> Basic AI analysis</li>
+                            <li><i class="fas fa-check text-success"></i> Standard templates</li>
+                            <li><i class="fas fa-check text-success"></i> Community support</li>
+                            <li><i class="fas fa-times text-muted"></i> Advanced analytics</li>
+                            <li><i class="fas fa-times text-muted"></i> Priority processing</li>
+                            <li><i class="fas fa-times text-muted"></i> Custom templates</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="card-footer">
+                        {% if user_data and user_data.member_type == 'free' %}
+                        <button class="btn btn-outline-secondary w-100" disabled>
+                            <i class="fas fa-check me-2"></i>Current Plan
+                        </button>
+                        {% else %}
+                        <button class="btn btn-outline-primary w-100" onclick="changePlan('free')">
+                            <i class="fas fa-arrow-down me-2"></i>Downgrade to Free
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Freemium Plan -->
+            <div class="col-lg-4 col-md-6">
+                <div class="membership-card h-100 popular {% if user_data and user_data.member_type == 'freemium' %}current-plan{% endif %}">
+                    <div class="popular-badge">Most Popular</div>
+                    <div class="card-header text-center">
+                        <div class="plan-icon">
+                            <i class="fas fa-star"></i>
+                        </div>
+                        <h3 class="plan-name">Freemium</h3>
+                        <div class="price">
+                            <span class="currency">$</span>
+                            <span class="amount">19.99</span>
+                            <span class="period">/month</span>
+                        </div>
+                        <p class="plan-description">Great for regular users</p>
+                    </div>
+                    
+                    <div class="card-body">
+                        <ul class="features-list">
+                            <li><i class="fas fa-check text-success"></i> 50 insights per day</li>
+                            <li><i class="fas fa-check text-success"></i> Advanced AI analysis</li>
+                            <li><i class="fas fa-check text-success"></i> Premium templates</li>
+                            <li><i class="fas fa-check text-success"></i> Priority support</li>
+                            <li><i class="fas fa-check text-success"></i> Basic analytics</li>
+                            <li><i class="fas fa-check text-success"></i> Export options</li>
+                            <li><i class="fas fa-times text-muted"></i> Custom templates</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="card-footer">
+                        {% if user_data and user_data.member_type == 'freemium' %}
+                        <button class="btn btn-warning w-100" disabled>
+                            <i class="fas fa-check me-2"></i>Current Plan
+                        </button>
+                        {% else %}
+                        <button class="btn btn-warning w-100" onclick="changePlan('freemium')">
+                            {% if user_data and user_data.member_type == 'free' %}
+                            <i class="fas fa-arrow-up me-2"></i>Upgrade to Freemium
+                            {% else %}
+                            <i class="fas fa-arrow-down me-2"></i>Downgrade to Freemium
+                            {% endif %}
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Max Plan -->
+            <div class="col-lg-4 col-md-6">
+                <div class="membership-card h-100 {% if user_data and user_data.member_type == 'max' %}current-plan{% endif %}">
+                    <div class="card-header text-center">
+                        <div class="plan-icon">
+                            <i class="fas fa-crown"></i>
+                        </div>
+                        <h3 class="plan-name">Max</h3>
+                        <div class="price">
+                            <span class="currency">$</span>
+                            <span class="amount">49.99</span>
+                            <span class="period">/month</span>
+                        </div>
+                        <p class="plan-description">For power users</p>
+                    </div>
+                    
+                    <div class="card-body">
+                        <ul class="features-list">
+                            <li><i class="fas fa-check text-success"></i> Unlimited insights</li>
+                            <li><i class="fas fa-check text-success"></i> Premium AI analysis</li>
+                            <li><i class="fas fa-check text-success"></i> All templates</li>
+                            <li><i class="fas fa-check text-success"></i> VIP support</li>
+                            <li><i class="fas fa-check text-success"></i> Advanced analytics</li>
+                            <li><i class="fas fa-check text-success"></i> Priority processing</li>
+                            <li><i class="fas fa-check text-success"></i> Custom templates</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="card-footer">
+                        {% if user_data and user_data.member_type == 'max' %}
+                        <button class="btn btn-success w-100" disabled>
+                            <i class="fas fa-check me-2"></i>Current Plan
+                        </button>
+                        {% else %}
+                        <button class="btn btn-success w-100" onclick="changePlan('max')">
+                            <i class="fas fa-arrow-up me-2"></i>Upgrade to Max
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Features Comparison -->
+        <div class="features-comparison mt-5">
+            <h2 class="text-center mb-4">Compare Plans</h2>
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Feature</th>
+                            <th class="text-center">Free</th>
+                            <th class="text-center">Freemium</th>
+                            <th class="text-center">Max</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Daily Insights</strong></td>
+                            <td class="text-center">5</td>
+                            <td class="text-center">50</td>
+                            <td class="text-center">Unlimited</td>
+                        </tr>
+                        <tr>
+                            <td><strong>AI Analysis</strong></td>
+                            <td class="text-center">Basic</td>
+                            <td class="text-center">Advanced</td>
+                            <td class="text-center">Premium</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Templates</strong></td>
+                            <td class="text-center">Standard</td>
+                            <td class="text-center">Premium</td>
+                            <td class="text-center">All + Custom</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Support</strong></td>
+                            <td class="text-center">Community</td>
+                            <td class="text-center">Priority</td>
+                            <td class="text-center">VIP</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Analytics</strong></td>
+                            <td class="text-center"><i class="fas fa-times text-muted"></i></td>
+                            <td class="text-center">Basic</td>
+                            <td class="text-center">Advanced</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Priority Processing</strong></td>
+                            <td class="text-center"><i class="fas fa-times text-muted"></i></td>
+                            <td class="text-center"><i class="fas fa-times text-muted"></i></td>
+                            <td class="text-center"><i class="fas fa-check text-success"></i></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- FAQ Section -->
+        <div class="faq-section mt-5">
+            <h2 class="text-center mb-4">Frequently Asked Questions</h2>
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    <div class="accordion" id="faqAccordion">
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="faq1">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse1">
+                                    What happens if I exceed my daily limit?
+                                </button>
+                            </h2>
+                            <div id="collapse1" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                <div class="accordion-body">
+                                    If you reach your daily insight limit, you'll need to wait until the next day or upgrade your plan to continue generating insights.
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="faq2">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse2">
+                                    Can I change my plan anytime?
+                                </button>
+                            </h2>
+                            <div id="collapse2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                <div class="accordion-body">
+                                    Yes! You can upgrade or downgrade your plan at any time. Changes take effect immediately, and billing adjustments are prorated.
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="faq3">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse3">
+                                    Is there a free trial for premium plans?
+                                </button>
+                            </h2>
+                            <div id="collapse3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                <div class="accordion-body">
+                                    The Free plan serves as your trial. You can experience the platform's core features before deciding to upgrade.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Call to Action -->
+        <div class="cta-section text-center mt-5 py-5">
+            <h2>Ready to unlock more insights?</h2>
+            <p class="lead text-muted">Join thousands of users generating powerful AI insights every day</p>
+            <a href="{{ url_for('auth.profile') }}" class="btn btn-primary btn-lg">
+                <i class="fas fa-user me-2"></i>Manage Your Plan
+            </a>
+        </div>
+    </div>
+</div>
+
+<script>
+function changePlan(planType) {
+    // TODO: Implement actual plan change logic
+    const planNames = {
+        'free': 'Free',
+        'freemium': 'Freemium',
+        'max': 'Max'
+    };
+    
+    if (planType === 'free') {
+        if (confirm(`Are you sure you want to downgrade to the ${planNames[planType]} plan? You may lose access to premium features.`)) {
+            alert(`Downgrade to ${planNames[planType]} plan coming soon! This will process the plan change.`);
+        }
+    } else {
+        if (confirm(`Upgrade to the ${planNames[planType]} plan for enhanced features?`)) {
+            alert(`Upgrade to ${planNames[planType]} plan coming soon! This will redirect to the payment page.`);
+        }
+    }
+}
+</script>
+
+<style>
+.membership-page {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    padding: 2rem 0;
+}
+
+.text-gradient {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.current-plan-banner {
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.membership-card {
+    background: white;
+    border: none;
+    border-radius: 20px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.membership-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 30px 60px rgba(0, 0, 0, 0.2);
+}
+
+.membership-card.popular {
+    border: 3px solid #ffc107;
+    transform: scale(1.05);
+}
+
+.membership-card.current-plan {
+    border: 3px solid #28a745;
+}
+
+.popular-badge {
+    position: absolute;
+    top: 20px;
+    right: -30px;
+    background: #ffc107;
+    color: #000;
+    padding: 5px 40px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    transform: rotate(45deg);
+    z-index: 1;
+}
+
+.card-header {
+    background: none;
+    border: none;
+    padding: 2rem 1.5rem 1rem;
+}
+
+.plan-icon {
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1rem;
+    font-size: 2rem;
+    color: white;
+}
+
+.popular .plan-icon {
+    background: linear-gradient(135deg, #ffc107 0%, #ff8f00 100%);
+}
+
+.plan-name {
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+    color: #2d3748;
+}
+
+.price {
+    margin-bottom: 0.5rem;
+}
+
+.price .currency {
+    font-size: 1.2rem;
+    vertical-align: top;
+    color: #667eea;
+}
+
+.price .amount {
+    font-size: 3rem;
+    font-weight: bold;
+    color: #2d3748;
+}
+
+.price .period {
+    font-size: 1rem;
+    color: #718096;
+}
+
+.plan-description {
+    color: #718096;
+    margin-bottom: 0;
+}
+
+.card-body {
+    padding: 1.5rem;
+}
+
+.features-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.features-list li {
+    padding: 0.5rem 0;
+    display: flex;
+    align-items: center;
+}
+
+.features-list li i {
+    margin-right: 0.75rem;
+    width: 16px;
+}
+
+.card-footer {
+    background: none;
+    border: none;
+    padding: 1.5rem;
+}
+
+.features-comparison {
+    background: white;
+    border-radius: 20px;
+    padding: 2rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+.faq-section {
+    background: white;
+    border-radius: 20px;
+    padding: 2rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+.cta-section {
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 20px;
+    margin-bottom: 2rem;
+}
+
+.btn {
+    border-radius: 10px;
+    font-weight: 600;
+    padding: 0.75rem 1.5rem;
+    transition: all 0.3s ease;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+}
+
+.btn-lg {
+    padding: 1rem 2rem;
+    font-size: 1.1rem;
+}
+
+@media (max-width: 768px) {
+    .membership-card.popular {
+        transform: none;
+    }
+    
+    .popular-badge {
+        top: 10px;
+        right: -25px;
+        padding: 3px 30px;
+        font-size: 0.7rem;
+    }
+}
+</style>
+{% endblock %} 

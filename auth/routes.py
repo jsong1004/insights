@@ -202,6 +202,46 @@ def dashboard():
     
     return render_template('auth/dashboard.html', user_data=user_data)
 
+@auth_bp.route('/membership', methods=['GET'])
+@login_required
+def membership():
+    """Membership plans page"""
+    try:
+        from app import firestore_manager
+        user_data = firestore_manager.get_user_data(session['user_id'])
+        
+        # Compute member type based on subscription
+        member_type = 'free'  # Default to free
+        if user_data and user_data.get('subscription'):
+            subscription = user_data['subscription']
+            plan = subscription.get('plan', 'free')
+            status = subscription.get('status', 'inactive')
+            
+            # Determine member type
+            if status == 'active' and plan in ['basic', 'pro', 'enterprise']:
+                member_type = 'freemium'
+            elif plan == 'freemium' or (status == 'active' and plan != 'free'):
+                member_type = 'freemium'
+            elif plan == 'max' or (status == 'active' and plan == 'max'):
+                member_type = 'max'
+        
+        user_context = {
+            'uid': session['user_id'],
+            'email': session.get('user_email'),
+            'member_type': member_type
+        }
+        
+        return render_template('auth/membership.html', user_data=user_context)
+        
+    except ImportError:
+        # Fallback when Firestore is not available
+        user_context = {
+            'uid': session['user_id'],
+            'email': session.get('user_email'),
+            'member_type': 'free'
+        }
+        return render_template('auth/membership.html', user_data=user_context)
+
 @auth_bp.route('/profile', methods=['GET'])
 @login_required
 def profile():
@@ -260,8 +300,10 @@ def profile():
             # Determine member type
             if status == 'active' and plan in ['basic', 'pro', 'enterprise']:
                 member_type = 'freemium'
-            elif plan == 'freemium' or (status == 'active' and plan != 'free'):
+            elif plan == 'freemium' or (status == 'active' and plan != 'free' and plan != 'max'):
                 member_type = 'freemium'
+            elif plan == 'max' or (status == 'active' and plan == 'max'):
+                member_type = 'max'
         
         profile_data['member_type'] = member_type
         

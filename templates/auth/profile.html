@@ -124,9 +124,13 @@
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Member Type</label>
                             <div class="info-display">
-                                <div class="membership-actions">
+                                                                <div class="membership-actions">
                                     <div class="current-membership mb-2">
-                                        {% if profile_data.member_type == 'freemium' %}
+                                        {% if profile_data.member_type == 'max' %}
+                                        <span class="badge bg-success text-white">
+                                            <i class="fas fa-crown me-1"></i>Max Member
+                                        </span>
+                                        {% elif profile_data.member_type == 'freemium' %}
                                         <span class="badge bg-warning text-dark">
                                             <i class="fas fa-star me-1"></i>Freemium Member
                                         </span>
@@ -137,14 +141,14 @@
                                         {% endif %}
                                     </div>
                                     {% if profile_data.member_type == 'free' %}
-                                    <button type="button" class="btn btn-warning btn-sm" id="upgrade-membership">
-                                        <i class="fas fa-arrow-up me-2"></i>Upgrade Membership
-                                    </button>
-                                    {% else %}
-                                    <button type="button" class="btn btn-outline-secondary btn-sm" id="downgrade-membership">
-                                        <i class="fas fa-arrow-down me-2"></i>Downgrade Membership
-                                    </button>
-                                    {% endif %}
+                            <a href="{{ url_for('auth.membership') }}" class="btn btn-warning btn-sm">
+                                <i class="fas fa-arrow-up me-2"></i>Upgrade Membership
+                            </a>
+                            {% else %}
+                            <a href="{{ url_for('auth.membership') }}" class="btn btn-outline-secondary btn-sm">
+                                <i class="fas fa-arrow-down me-2"></i>Manage Membership
+                            </a>
+                            {% endif %}
                                 </div>
                             </div>
                         </div>
@@ -287,27 +291,7 @@ setTimeout(() => {
     }
 }, 5000);
 
-// Membership action handlers
-document.addEventListener('DOMContentLoaded', function() {
-    const upgradeBtn = document.getElementById('upgrade-membership');
-    const downgradeBtn = document.getElementById('downgrade-membership');
-    
-    if (upgradeBtn) {
-        upgradeBtn.addEventListener('click', function() {
-            // TODO: Implement actual upgrade logic
-            alert('Upgrade functionality coming soon! This will redirect to the subscription upgrade page.');
-        });
-    }
-    
-    if (downgradeBtn) {
-        downgradeBtn.addEventListener('click', function() {
-            // TODO: Implement actual downgrade logic
-            if (confirm('Are you sure you want to downgrade your membership? You may lose access to premium features.')) {
-                alert('Downgrade functionality coming soon! This will process the membership downgrade.');
-            }
-        });
-    }
-});
+
 </script>
 
 <style>
