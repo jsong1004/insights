@@ -215,3 +215,32 @@ def track_activity():
             'success': False,
             'error': 'Failed to track activity'
         }), 500
+
+@api_bp.route('/activity-report')
+@login_required
+def get_activity_report():
+    """Get activity report for different time periods"""
+    try:
+        user_id = session.get('user_id')
+        period = request.args.get('period', 'week')
+        
+        if not user_id:
+            return jsonify({'success': False, 'error': 'User not authenticated'}), 401
+        
+        firestore_manager = current_app.extensions.get('firestore_manager')
+        
+        # Get activity data based on period
+        activity_data = firestore_manager.get_activity_report(user_id, period)
+        
+        return jsonify({
+            'success': True,
+            'activity_data': activity_data['data'],
+            'summary': activity_data['summary']
+        })
+        
+    except Exception as e:
+        logger.error(f"Error getting activity report: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Failed to retrieve activity report'
+        }), 500
