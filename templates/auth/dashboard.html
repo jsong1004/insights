@@ -636,7 +636,7 @@ function renderInsightsTable() {
     tbody.innerHTML = sortedData.map(insight => `
         <tr>
             <td>
-                <a href="/insights/${insight.id}" class="text-decoration-none">
+                                                <a href="/insight/${insight.id}" class="text-decoration-none">
                     <div class="fw-semibold text-primary">${escapeHtml(insight.title)}</div>
                 </a>
                 <small class="text-muted">

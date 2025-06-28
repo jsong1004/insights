@@ -21,15 +21,16 @@ def health_check():
 
 @main_bp.route('/')
 def index():
-    """Main page with insights generator form"""
+    """Public home page"""
+    return render_template('index.html')
+
+@main_bp.route('/insights')
+@login_required
+def insights():
+    """Insights generation form page for authenticated users"""
     user_id = session.get('user_id')
-    
-    if user_id:
-        insights_list = insights_firestore_manager.get_all_insights()
-    else:
-        insights_list = insights_firestore_manager.get_shared_insights()
-    
-    return render_template('index.html', insights_list=insights_list)
+    insights_list = insights_firestore_manager.get_all_insights()
+    return render_template('insights_form.html', insights_list=insights_list)
 
 @main_bp.route('/generate', methods=['POST'])
 @login_required
@@ -133,23 +134,28 @@ def generate_insights():
         else:
             flash(f'Generated insights for "{topic}" (saved to temporary storage)', 'warning')
         
-        return redirect(url_for('main.view_insights', insight_id=insights.id))
+        return redirect(url_for('main.view_insight', insight_id=insights.id))
         
     except Exception as e:
         logger.error(f"❌ Error generating insights: {e}")
         flash(f'Error generating insights: {str(e)}', 'error')
         return redirect(url_for('main.index'))
 
-@main_bp.route('/insights/<insight_id>')
-def view_insights(insight_id):
-    """View specific insights"""
+@main_bp.route('/insight/<insight_id>')
+def view_insight(insight_id):
+    """View specific insight (public access for shared insights)"""
     insights = insights_firestore_manager.get_insights(insight_id)
     if not insights:
-        flash('Insights not found.', 'error')
+        flash('Insight not found.', 'error')
+        return redirect(url_for('main.index'))
+    
+    # Check if insight is private and user has access
+    user_id = session.get('user_id')
+    if not insights.is_shared and (not user_id or insights.author_id != user_id):
+        flash('This insight is private.', 'error')
         return redirect(url_for('main.index'))
     
     # Track insights viewing activity (only for logged-in users)
-    user_id = session.get('user_id')
     if user_id:
         try:
             firestore_manager = current_app.extensions.get('firestore_manager')
@@ -166,8 +172,7 @@ def view_insights(insight_id):
         except Exception as e:
             logger.warning(f"Failed to track insights viewing activity: {e}")
     
-    insights_list = insights_firestore_manager.get_all_insights()
-    return render_template('insights.html', insights=insights, insights_list=insights_list)
+    return render_template('insights.html', insights=insights)
 
 @main_bp.route('/delete/<insight_id>', methods=['POST'])
 @login_required

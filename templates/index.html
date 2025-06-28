@@ -1,502 +1,406 @@
 {% extends "base.html" %}
 
-{% block title %}AI Insights Generator - Home{% endblock %}
+{% block title %}AI Insights Generator - Discover Powerful AI-Generated Insights{% endblock %}
 
 {% block content %}
-<div class="text-center mb-4">
-    <h1 class="display-6 fw-bold text-dark mb-3">
-        <i class="fas fa-brain text-primary me-3"></i>AI Insights Generator
-    </h1>
-    <p class="lead text-muted">
-        Powered by CrewAI Multi-Agent System for intelligent research and analysis
-    </p>
-</div>
-
-{% if not session.user_id %}
-<!-- Authentication Notice for Guest Users -->
-<div class="insight-card border-warning">
-    <div class="d-flex align-items-center mb-3">
-        <div class="bg-warning text-white rounded-circle d-inline-flex align-items-center justify-content-center me-3" 
-             style="width: 50px; height: 50px;">
-            <i class="fas fa-lock fa-lg"></i>
-        </div>
-        <div>
-            <h3 class="insight-title mb-1 text-warning">
-                <i class="fas fa-sign-in-alt me-2"></i>Login Required
-            </h3>
-            <p class="mb-0 text-muted">Please sign in to generate AI insights</p>
-        </div>
-    </div>
-    
-    <div class="row align-items-center">
-        <div class="col-md-8">
-            <p class="mb-3">
-                To generate AI insights and access all features, you need to create an account or sign in. 
-                Your account will track your usage and store your generated insights for future reference.
-            </p>
-            
-            <div class="d-flex gap-3">
-                <a href="{{ url_for('auth.login') }}" class="btn btn-primary">
-                    <i class="fas fa-sign-in-alt me-2"></i>Login
-                </a>
-                <a href="{{ url_for('auth.signup') }}" class="btn btn-outline-primary">
-                    <i class="fas fa-user-plus me-2"></i>Create Account
-                </a>
+<div class="home-page">
+    <!-- Hero Section -->
+    <div class="hero-section">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-lg-6">
+                    <h1 class="hero-title">
+                        <span class="text-gradient">AI-Powered Insights</span><br>
+                        for Every Topic
+                    </h1>
+                    <p class="hero-description">
+                        Generate comprehensive, validated insights on any topic using our advanced AI research agents. 
+                        Get structured analysis with confidence scores and actionable intelligence.
+                    </p>
+                    <div class="hero-actions">
+                        {% if not session.user_id %}
+                        <a href="{{ url_for('auth.signup') }}" class="btn btn-primary btn-lg me-3">
+                            <i class="fas fa-rocket me-2"></i>Get Started Free
+                        </a>
+                        <a href="{{ url_for('auth.login') }}" class="btn btn-outline-primary btn-lg">
+                            <i class="fas fa-sign-in-alt me-2"></i>Login
+                        </a>
+                        {% else %}
+                        <a href="{{ url_for('auth.dashboard') }}" class="btn btn-primary btn-lg me-3">
+                            <i class="fas fa-tachometer-alt me-2"></i>Go to Dashboard
+                        </a>
+                        <a href="{{ url_for('main.insights') }}" class="btn btn-outline-primary btn-lg">
+                            <i class="fas fa-lightbulb me-2"></i>Generate Insight
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="hero-image">
+                        <div class="floating-card">
+                            <i class="fas fa-brain"></i>
+                            <h5>AI Research Agent</h5>
+                            <p>Analyzing data...</p>
+                            <div class="progress">
+                                <div class="progress-bar" style="width: 75%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
-        <div class="col-md-4 text-center">
-            <i class="fas fa-shield-alt fa-4x text-warning opacity-75"></i>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+                <div class="container">
+            <div class="row">
+                <!-- Main Content: How It Works & Example Topics -->
+                <div class="col-12">
+                    <!-- How It Works -->
+                    <div class="how-it-works mb-5">
+                        <div class="section-header">
+                            <h2><i class="fas fa-cogs me-2"></i>How It Works</h2>
+                        </div>
+                        
+                        <div class="steps-container">
+                            <div class="step-item">
+                                <div class="step-icon research">
+                                    <i class="fas fa-search"></i>
+                                </div>
+                                <div class="step-content">
+                                    <h5>1. Research</h5>
+                                    <p>AI Research Agent searches for comprehensive, up-to-date information on your topic</p>
+                                </div>
+                            </div>
+                            
+                            <div class="step-item">
+                                <div class="step-icon validate">
+                                    <i class="fas fa-shield-alt"></i>
+                                </div>
+                                <div class="step-content">
+                                    <h5>2. Validate</h5>
+                                    <p>Validation Agent checks source credibility and assigns confidence scores</p>
+                                </div>
+                            </div>
+                            
+                            <div class="step-item">
+                                <div class="step-icon analyze">
+                                    <i class="fas fa-lightbulb"></i>
+                                </div>
+                                <div class="step-content">
+                                    <h5>3. Analyze</h5>
+                                    <p>Insights Agent creates meaningful analysis and actionable intelligence</p>
+                                </div>
+                            </div>
+                            
+                            <div class="step-item">
+                                <div class="step-icon present">
+                                    <i class="fas fa-chart-line"></i>
+                                </div>
+                                <div class="step-content">
+                                    <h5>4. Present</h5>
+                                    <p>Structured insights with sources, confidence scores, and practical applications</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Example Topics -->
+                    <div class="example-topics">
+                        <div class="section-header">
+                            <h2><i class="fas fa-star me-2"></i>Example Topics</h2>
+                        </div>
+                        
+                        <div class="topics-grid">
+                            <div class="topic-category">
+                                <h6 class="category-title tech">Technology & Innovation</h6>
+                                <ul class="topic-list">
+                                    <li><i class="fas fa-chevron-right me-2"></i>Artificial Intelligence in Healthcare</li>
+                                    <li><i class="fas fa-chevron-right me-2"></i>Quantum Computing Applications</li>
+                                    <li><i class="fas fa-chevron-right me-2"></i>Blockchain in Supply Chain</li>
+                                    <li><i class="fas fa-chevron-right me-2"></i>5G Network Implementation</li>
+                                </ul>
+                            </div>
+                            
+                            <div class="topic-category">
+                                <h6 class="category-title business">Business & Market</h6>
+                                <ul class="topic-list">
+                                    <li><i class="fas fa-chevron-right me-2"></i>Remote Work Trends 2024</li>
+                                    <li><i class="fas fa-chevron-right me-2"></i>Sustainable Business Practices</li>
+                                    <li><i class="fas fa-chevron-right me-2"></i>E-commerce Market Analysis</li>
+                                    <li><i class="fas fa-chevron-right me-2"></i>Startup Funding Landscape</li>
+                                </ul>
+                            </div>
+                            
+                            <div class="topic-category">
+                                <h6 class="category-title science">Science & Environment</h6>
+                                <ul class="topic-list">
+                                    <li><i class="fas fa-chevron-right me-2"></i>Climate Change Solutions</li>
+                                    <li><i class="fas fa-chevron-right me-2"></i>Renewable Energy Innovations</li>
+                                    <li><i class="fas fa-chevron-right me-2"></i>Space Exploration Progress</li>
+                                    <li><i class="fas fa-chevron-right me-2"></i>Biotechnology Advances</li>
+                                </ul>
+                            </div>
+                            
+                            <div class="topic-category">
+                                <h6 class="category-title society">Society & Culture</h6>
+                                <ul class="topic-list">
+                                    <li><i class="fas fa-chevron-right me-2"></i>Digital Privacy Rights</li>
+                                    <li><i class="fas fa-chevron-right me-2"></i>Future of Education</li>
+                                    <li><i class="fas fa-chevron-right me-2"></i>Social Media Impact</li>
+                                    <li><i class="fas fa-chevron-right me-2"></i>Mental Health Awareness</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CTA Section -->
+    <div class="cta-section">
+        <div class="container">
+            <div class="text-center">
+                <h2 class="cta-title">Ready to Generate Your First Insight?</h2>
+                <p class="cta-description">Join thousands of users discovering powerful AI insights every day</p>
+                {% if not session.user_id %}
+                <a href="{{ url_for('auth.signup') }}" class="btn btn-primary btn-lg">
+                    <i class="fas fa-rocket me-2"></i>Start Free Today
+                </a>
+                {% else %}
+                <a href="{{ url_for('main.insights') }}" class="btn btn-primary btn-lg">
+                    <i class="fas fa-lightbulb me-2"></i>Generate Insight Now
+                </a>
+                {% endif %}
+            </div>
         </div>
     </div>
 </div>
-{% endif %}
 
-{% if session.user_id %}
-<!-- Add this after the authentication notice -->
-<div id="usage-warning-container"></div>
+<style>
+.home-page {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+}
 
-<script>
-// Check usage limits on page load
-async function checkUsageLimits() {
-    try {
-        const response = await fetch('/api/usage-stats');
-        const data = await response.json();
-        
-        if (data.success) {
-            const stats = data.stats;
-            const container = document.getElementById('usage-warning-container');
-            
-            // Show warnings if approaching limits
-            if (stats.remaining.daily_insights === 0) {
-                container.innerHTML = `
-                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                        <i class="fas fa-exclamation-circle me-2"></i>
-                        <strong>Daily limit reached!</strong> You've used all ${stats.limits.daily_insights} daily insights. 
-                        Come back tomorrow or <a href="/billing/plans" class="alert-link">upgrade your plan</a>.
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                `;
-            } else if (stats.remaining.monthly_insights === 0) {
-                container.innerHTML = `
-                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                        <i class="fas fa-exclamation-circle me-2"></i>
-                        <strong>Monthly limit reached!</strong> You've used all ${stats.limits.monthly_insights} monthly insights. 
-                        <a href="/billing/plans" class="alert-link">Upgrade your plan</a> to continue.
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                `;
-            } else if (stats.usage_percentage.insights > 80) {
-                container.innerHTML = `
-                    <div class="alert alert-warning alert-dismissible fade show" role="alert">
-                        <i class="fas fa-exclamation-triangle me-2"></i>
-                        You've used ${stats.current_usage.monthly_insights} of ${stats.limits.monthly_insights} monthly insights (${Math.round(stats.usage_percentage.insights)}%). 
-                        <a href="/auth/dashboard" class="alert-link">View usage details</a>
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                `;
-            }
-        }
-    } catch (error) {
-        console.error('Failed to check usage limits:', error);
+.hero-section {
+    padding: 4rem 0;
+    color: white;
+}
+
+.hero-title {
+    font-size: 3.5rem;
+    font-weight: 800;
+    line-height: 1.2;
+    margin-bottom: 1.5rem;
+}
+
+.text-gradient {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.hero-description {
+    font-size: 1.25rem;
+    line-height: 1.6;
+    margin-bottom: 2rem;
+    opacity: 0.9;
+}
+
+.hero-actions {
+    margin-bottom: 2rem;
+}
+
+.hero-image {
+    position: relative;
+    height: 400px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.floating-card {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 20px;
+    padding: 2rem;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+    color: #2d3748;
+    text-align: center;
+    max-width: 300px;
+    animation: float 3s ease-in-out infinite;
+}
+
+.floating-card i {
+    font-size: 3rem;
+    color: #667eea;
+    margin-bottom: 1rem;
+}
+
+.floating-card h5 {
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+}
+
+.floating-card p {
+    margin-bottom: 1rem;
+    color: #718096;
+}
+
+.main-content {
+    background: white;
+    padding: 4rem 0;
+}
+
+.section-header {
+    margin-bottom: 2rem;
+}
+
+.section-header h2 {
+    color: #2d3748;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+
+.how-it-works, .example-topics {
+    background: white;
+    border-radius: 20px;
+    padding: 2rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+.steps-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.step-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+}
+
+.step-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: white;
+    flex-shrink: 0;
+}
+
+.step-icon.research { background: #3b82f6; }
+.step-icon.validate { background: #059669; }
+.step-icon.analyze { background: #f59e0b; }
+.step-icon.present { background: #06b6d4; }
+
+.step-content h5 {
+    margin-bottom: 0.5rem;
+    color: #2d3748;
+    font-weight: 600;
+}
+
+.step-content p {
+    color: #718096;
+    font-size: 0.95rem;
+    margin: 0;
+}
+
+.topics-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.topic-category {
+    padding: 1rem;
+    border-radius: 10px;
+    background: #f8fafc;
+}
+
+.category-title {
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid;
+}
+
+.category-title.tech { color: #3b82f6; border-color: #3b82f6; }
+.category-title.business { color: #059669; border-color: #059669; }
+.category-title.science { color: #f59e0b; border-color: #f59e0b; }
+.category-title.society { color: #06b6d4; border-color: #06b6d4; }
+
+.topic-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.topic-list li {
+    padding: 0.25rem 0;
+    color: #4a5568;
+    font-size: 0.9rem;
+}
+
+.topic-list i {
+    color: #a0aec0;
+}
+
+.cta-section {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    padding: 4rem 0;
+    color: white;
+}
+
+.cta-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+}
+
+.cta-description {
+    font-size: 1.2rem;
+    margin-bottom: 2rem;
+    opacity: 0.9;
+}
+
+
+
+@keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-20px); }
+}
+
+@media (max-width: 768px) {
+    .hero-title {
+        font-size: 2.5rem;
+    }
+    
+    .hero-description {
+        font-size: 1.1rem;
+    }
+    
+    .cta-title {
+        font-size: 2rem;
+    }
+    
+    .step-item {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .step-icon {
+        margin: 0 auto;
     }
 }
-
-// Check on page load if user is logged in
-if (document.getElementById('usage-warning-container')) {
-    checkUsageLimits();
-}
-</script>
-{% endif %}
-
-<!-- Insights Generation Form -->
-<div class="insight-card {% if not session.user_id %}opacity-50{% endif %}">
-    <h2 class="insight-title">
-        <i class="fas fa-plus-circle text-primary me-2"></i>Generate New Insights
-        {% if not session.user_id %}
-        <span class="badge bg-warning ms-2">Login Required</span>
-        {% endif %}
-    </h2>
-    
-                                <form method="POST" action="{{ url_for('main.generate_insights') }}" data-loading>
-        <div class="row">
-            <div class="col-12 mb-4">
-                <label for="topic" class="form-label fw-semibold">
-                    <i class="fas fa-search me-2"></i>Research Topic
-                </label>
-                <input type="text" 
-                       class="form-control form-control-lg" 
-                       id="topic" 
-                       name="topic" 
-                       placeholder="e.g., Artificial Intelligence in Healthcare, Climate Change Solutions, Quantum Computing..."
-                       required
-                       maxlength="200"
-                       {% if not session.user_id %}disabled{% endif %}>
-                <div class="form-text">
-                    Enter the main topic you want our AI agents to research and analyze
-                </div>
-            </div>
-            
-            <div class="col-md-6 mb-4">
-                <label for="source" class="form-label fw-semibold">
-                    <i class="fas fa-globe me-2"></i>Source Type
-                </label>
-                <select class="form-select" 
-                        id="source" 
-                        name="source"
-                        {% if not session.user_id %}disabled{% endif %}>
-                    <option value="general" selected>General Web Search</option>
-                    <option value="news">News Articles</option>
-                    <option value="finance">Finance & Business</option>
-                </select>
-                <div class="form-text">
-                    Choose the type of sources to search for your research
-                </div>
-            </div>
-            
-            <div class="col-md-6 mb-4">
-                <label for="time_range" class="form-label fw-semibold">
-                    <i class="fas fa-calendar-alt me-2"></i>Time Range
-                </label>
-                <select class="form-select" 
-                        id="time_range" 
-                        name="time_range"
-                        {% if not session.user_id %}disabled{% endif %}>
-                    <option value="none" selected>None</option>
-                    <option value="day">Past Day</option>
-                    <option value="week">Past Week</option>
-                    <option value="month">Past Month</option>
-                    <option value="year">Past Year</option>
-                </select>
-                <div class="form-text">
-                    Filter results by publication date (optional)
-                </div>
-            </div>
-            
-            <div class="col-12 mb-4">
-                <label for="instructions" class="form-label fw-semibold">
-                    <i class="fas fa-clipboard-list me-2"></i>Specific Instructions (Optional)
-                </label>
-                <textarea class="form-control" 
-                          id="instructions" 
-                          name="instructions" 
-                          rows="4"
-                          placeholder="Provide specific guidance for the research:&#10;&#10;• Focus on recent developments (2023-2024)&#10;• Include market analysis and trends&#10;• Compare different approaches or solutions&#10;• Analyze potential risks and opportunities&#10;• Look for expert opinions and case studies&#10;&#10;The more specific your instructions, the better our AI agents can tailor the research to your needs."
-                          maxlength="1000"
-                          {% if not session.user_id %}disabled{% endif %}></textarea>
-                <div class="form-text">
-                    Optional: Provide specific instructions to guide the AI agents' research approach
-                </div>
-            </div>
-        </div>
-        
-        <div class="d-grid">
-            {% if session.user_id %}
-            <button type="submit" class="btn btn-primary btn-lg" id="generate-insights-btn">
-                <span class="btn-text">
-                    <i class="fas fa-rocket me-2"></i>Generate Insights
-                </span>
-                <span class="loading-spinner">
-                    <i class="fas fa-spinner fa-spin me-2"></i>Generating Insights...
-                </span>
-            </button>
-            {% else %}
-            <button type="button" class="btn btn-outline-secondary btn-lg" disabled>
-                <i class="fas fa-lock me-2"></i>Login Required to Generate Insights
-            </button>
-            {% endif %}
-        </div>
-    </form>
-</div>
-
-<!-- How It Works Section -->
-<div class="insight-card">
-    <h3 class="insight-title">
-        <i class="fas fa-cogs text-primary me-2"></i>How It Works
-    </h3>
-    
-    <div class="row">
-        <div class="col-md-6 col-lg-3 mb-4">
-            <div class="text-center">
-                <div class="bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" 
-                     style="width: 60px; height: 60px;">
-                    <i class="fas fa-search fa-lg"></i>
-                </div>
-                <h5 class="fw-bold">1. Research</h5>
-                <p class="text-muted small">
-                    AI Research Agent searches for comprehensive, up-to-date information on your topic
-                </p>
-            </div>
-        </div>
-        
-        <div class="col-md-6 col-lg-3 mb-4">
-            <div class="text-center">
-                <div class="bg-success text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" 
-                     style="width: 60px; height: 60px;">
-                    <i class="fas fa-shield-alt fa-lg"></i>
-                </div>
-                <h5 class="fw-bold">2. Validate</h5>
-                <p class="text-muted small">
-                    Validation Agent checks source credibility and assigns confidence scores
-                </p>
-            </div>
-        </div>
-        
-        <div class="col-md-6 col-lg-3 mb-4">
-            <div class="text-center">
-                <div class="bg-warning text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" 
-                     style="width: 60px; height: 60px;">
-                    <i class="fas fa-lightbulb fa-lg"></i>
-                </div>
-                <h5 class="fw-bold">3. Analyze</h5>
-                <p class="text-muted small">
-                    Insights Agent creates meaningful analysis and actionable intelligence
-                </p>
-            </div>
-        </div>
-        
-        <div class="col-md-6 col-lg-3 mb-4">
-            <div class="text-center">
-                <div class="bg-info text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" 
-                     style="width: 60px; height: 60px;">
-                    <i class="fas fa-chart-line fa-lg"></i>
-                </div>
-                <h5 class="fw-bold">4. Present</h5>
-                <p class="text-muted small">
-                    Structured insights with sources, confidence scores, and practical applications
-                </p>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Example Topics -->
-<div class="insight-card">
-    <h3 class="insight-title">
-        <i class="fas fa-star text-primary me-2"></i>Example Topics
-    </h3>
-    
-    <div class="row">
-        <div class="col-md-6 mb-3">
-            <h6 class="fw-semibold text-primary">Technology & Innovation</h6>
-            <ul class="list-unstyled small text-muted">
-                <li><i class="fas fa-chevron-right me-2"></i>Artificial Intelligence in Healthcare</li>
-                <li><i class="fas fa-chevron-right me-2"></i>Quantum Computing Applications</li>
-                <li><i class="fas fa-chevron-right me-2"></i>Blockchain in Supply Chain</li>
-                <li><i class="fas fa-chevron-right me-2"></i>5G Network Implementation</li>
-            </ul>
-        </div>
-        
-        <div class="col-md-6 mb-3">
-            <h6 class="fw-semibold text-success">Business & Market</h6>
-            <ul class="list-unstyled small text-muted">
-                <li><i class="fas fa-chevron-right me-2"></i>Remote Work Trends 2024</li>
-                <li><i class="fas fa-chevron-right me-2"></i>Sustainable Business Practices</li>
-                <li><i class="fas fa-chevron-right me-2"></i>E-commerce Market Analysis</li>
-                <li><i class="fas fa-chevron-right me-2"></i>Startup Funding Landscape</li>
-            </ul>
-        </div>
-        
-        <div class="col-md-6 mb-3">
-            <h6 class="fw-semibold text-warning">Science & Environment</h6>
-            <ul class="list-unstyled small text-muted">
-                <li><i class="fas fa-chevron-right me-2"></i>Climate Change Solutions</li>
-                <li><i class="fas fa-chevron-right me-2"></i>Renewable Energy Innovations</li>
-                <li><i class="fas fa-chevron-right me-2"></i>Space Exploration Progress</li>
-                <li><i class="fas fa-chevron-right me-2"></i>Biotechnology Advances</li>
-            </ul>
-        </div>
-        
-        <div class="col-md-6 mb-3">
-            <h6 class="fw-semibold text-info">Society & Culture</h6>
-            <ul class="list-unstyled small text-muted">
-                <li><i class="fas fa-chevron-right me-2"></i>Digital Privacy Rights</li>
-                <li><i class="fas fa-chevron-right me-2"></i>Future of Education</li>
-                <li><i class="fas fa-chevron-right me-2"></i>Social Media Impact</li>
-                <li><i class="fas fa-chevron-right me-2"></i>Mental Health Awareness</li>
-            </ul>
-        </div>
-    </div>
-</div>
-
-<!-- Quick Start Guide -->
-{% if not insights_list %}
-<div class="insight-card border-primary">
-    <h3 class="insight-title text-primary">
-        <i class="fas fa-play-circle me-2"></i>Quick Start Guide
-    </h3>
-    
-    <div class="row align-items-center">
-        <div class="col-md-8">
-            <ol class="mb-0">
-                <li class="mb-2">
-                    <strong>Enter a topic</strong> you want to research (e.g., "AI in Healthcare")
-                </li>
-                <li class="mb-2">
-                    <strong>Add specific instructions</strong> to guide the research (optional but recommended)
-                </li>
-                <li class="mb-2">
-                    <strong>Click "Generate Insights"</strong> and wait for our AI agents to work
-                </li>
-                <li class="mb-0">
-                    <strong>Review the results</strong> with validated sources and confidence scores
-                </li>
-            </ol>
-        </div>
-        <div class="col-md-4 text-center">
-            <i class="fas fa-rocket fa-4x text-primary opacity-75"></i>
-        </div>
-    </div>
-</div>
-{% endif %}
-{% endblock %}
-
-{% block scripts %}
-<script>
-    // Character counters for form fields
-    document.addEventListener('DOMContentLoaded', function() {
-        const topicInput = document.getElementById('topic');
-        const instructionsTextarea = document.getElementById('instructions');
-        const insightsForm = document.querySelector('form[data-loading]');
-        const submitButton = insightsForm ? insightsForm.querySelector('button[type="submit"]') : null;
-        
-        // Add character counters
-        function addCharacterCounter(element, maxLength) {
-            const counter = document.createElement('div');
-            counter.className = 'form-text text-end';
-            counter.style.fontSize = '0.75rem';
-            element.parentNode.appendChild(counter);
-            
-            function updateCounter() {
-                const remaining = maxLength - element.value.length;
-                counter.textContent = `${element.value.length}/${maxLength} characters`;
-                counter.className = remaining < 20 ? 'form-text text-end text-warning' : 'form-text text-end text-muted';
-            }
-            
-            element.addEventListener('input', updateCounter);
-            updateCounter();
-        }
-        
-        if (topicInput) addCharacterCounter(topicInput, 200);
-        if (instructionsTextarea) addCharacterCounter(instructionsTextarea, 1000);
-        
-        // Auto-resize textarea
-        if (instructionsTextarea) {
-            instructionsTextarea.addEventListener('input', function() {
-                this.style.height = 'auto';
-                this.style.height = this.scrollHeight + 'px';
-            });
-        }
-        
-        // Handle form submission with loading state
-        if (insightsForm && submitButton) {
-            let isSubmitting = false; // Prevent double submissions
-            
-            insightsForm.addEventListener('submit', function(e) {
-                // Debug logging
-                console.log('Form submission started');
-                console.log('Form action:', insightsForm.action);
-                console.log('Form method:', insightsForm.method);
-                console.log('Topic input value:', topicInput ? topicInput.value : 'Topic input not found');
-                console.log('Instructions textarea value:', instructionsTextarea ? instructionsTextarea.value : 'Instructions textarea not found');
-                
-                // Prevent double submissions
-                if (isSubmitting) {
-                    console.log('Preventing double submission');
-                    e.preventDefault();
-                    return false;
-                }
-                
-                // Validate required fields
-                const topic = topicInput.value.trim();
-                console.log('Trimmed topic value:', topic);
-                console.log('Topic length:', topic.length);
-                
-                if (!topic) {
-                    console.log('Empty topic - preventing submission');
-                    e.preventDefault();
-                    topicInput.focus();
-                    showFlashMessage('Please enter a research topic to continue.', 'warning');
-                    return false;
-                }
-                
-                console.log('Form validation passed, submitting...');
-                
-                // Set submission flag
-                isSubmitting = true;
-                
-                // Show loading state
-                showLoading(submitButton);
-                
-                // Show a flash message about the process
-                showFlashMessage(
-                    'AI agents are now researching your topic. This may take 1-2 minutes...', 
-                    'info'
-                );
-                
-                // Disable form fields AFTER a short delay to prevent changes during submission
-                // but allow the form data to be collected first
-                setTimeout(function() {
-                    topicInput.disabled = true;
-                    if (instructionsTextarea) {
-                        instructionsTextarea.disabled = true;
-                    }
-                    const sourceSelect = document.getElementById('source');
-                    const timeRangeSelect = document.getElementById('time_range');
-                    if (sourceSelect) sourceSelect.disabled = true;
-                    if (timeRangeSelect) timeRangeSelect.disabled = true;
-                }, 100);
-                
-                // Optional: Add a timeout to re-enable the form if something goes wrong
-                // This is a safety measure in case the page doesn't redirect
-                setTimeout(function() {
-                    hideLoading(submitButton);
-                    topicInput.disabled = false;
-                    if (instructionsTextarea) {
-                        instructionsTextarea.disabled = false;
-                    }
-                    const sourceSelect = document.getElementById('source');
-                    const timeRangeSelect = document.getElementById('time_range');
-                    if (sourceSelect) sourceSelect.disabled = false;
-                    if (timeRangeSelect) timeRangeSelect.disabled = false;
-                    isSubmitting = false;
-                }, 120000); // 2 minutes timeout
-            });
-        }
-        
-        // Example topic click handlers
-        document.querySelectorAll('.list-unstyled li').forEach(function(item) {
-            item.style.cursor = 'pointer';
-            item.addEventListener('click', function() {
-                const topicText = this.textContent.replace(/^\s*\S+\s*/, ''); // Remove the chevron icon
-                if (topicInput) {
-                    topicInput.value = topicText.trim();
-                    topicInput.focus();
-                    topicInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    
-                    // Trigger input event to update character counter
-                    topicInput.dispatchEvent(new Event('input'));
-                }
-            });
-        });
-        
-        // Handle page visibility change to hide loading state if user navigates away and back
-        document.addEventListener('visibilitychange', function() {
-            if (!document.hidden && submitButton && submitButton.classList.contains('loading')) {
-                // User came back to the page and button is still in loading state
-                // Check if we're still on the form page (not redirected to results)
-                if (window.location.pathname === '/') {
-                    hideLoading(submitButton);
-                    topicInput.disabled = false;
-                    if (instructionsTextarea) {
-                        instructionsTextarea.disabled = false;
-                    }
-                    const sourceSelect = document.getElementById('source');
-                    const timeRangeSelect = document.getElementById('time_range');
-                    if (sourceSelect) sourceSelect.disabled = false;
-                    if (timeRangeSelect) timeRangeSelect.disabled = false;
-                }
-            }
-        });
-    });
-</script>
+</style>
 {% endblock %} 

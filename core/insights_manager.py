@@ -270,6 +270,85 @@ class FirestoreManager:
         except Exception as e:
             logger.error(f"Error retrieving shared insights: {e}")
             return [insights for insights in insights_storage.values() if insights.is_shared]
+    
+    def get_featured_insights(self, limit: int = 5) -> List[GeneratedInsights]:
+        """Get featured insights (top liked insights from the past week)"""
+        from datetime import datetime, timedelta
+        
+        featured_insights = []
+        
+        try:
+            # Calculate date one week ago
+            one_week_ago = datetime.now() - timedelta(days=7)
+            
+            if self.use_firestore and self.db:
+                # Query Firestore for shared insights from the past week, ordered by likes
+                docs = self.db.collection(FIRESTORE_COLLECTION)\
+                    .where('is_shared', '==', True)\
+                    .where('created_at', '>=', one_week_ago)\
+                    .order_by('created_at')\
+                    .order_by('likes', direction=firestore.Query.DESCENDING)\
+                    .limit(limit)\
+                    .stream()
+                
+                for doc in docs:
+                    try:
+                        data = doc.to_dict()
+                        data.pop('created_at', None)
+                        data.pop('updated_at', None)
+                        
+                        insights = GeneratedInsights(**data)
+                        featured_insights.append(insights)
+                        
+                    except Exception as e:
+                        logger.warning(f"Error parsing featured insight document {doc.id}: {e}")
+                        continue
+            
+            # If Firestore query didn't return enough results, supplement with in-memory storage
+            if len(featured_insights) < limit:
+                memory_insights = []
+                for insight_id, insights in insights_storage.items():
+                    if (insights.is_shared and 
+                        not any(i.id == insight_id for i in featured_insights)):
+                        # Parse timestamp for comparison
+                        try:
+                            if isinstance(insights.timestamp, str):
+                                insight_date = datetime.fromisoformat(insights.timestamp.replace('Z', '+00:00'))
+                            else:
+                                insight_date = insights.timestamp
+                            
+                            if insight_date >= one_week_ago:
+                                memory_insights.append(insights)
+                        except Exception as e:
+                            logger.warning(f"Error parsing timestamp for insight {insight_id}: {e}")
+                            # Include it anyway if we can't parse the date
+                            memory_insights.append(insights)
+                
+                # Sort by likes (descending) and take remaining needed
+                memory_insights.sort(key=lambda x: getattr(x, 'likes', 0), reverse=True)
+                remaining_needed = limit - len(featured_insights)
+                featured_insights.extend(memory_insights[:remaining_needed])
+            
+            # Final sort by likes to ensure proper ordering
+            featured_insights.sort(key=lambda x: getattr(x, 'likes', 0), reverse=True)
+            
+            # If still not enough, get the most liked shared insights regardless of date
+            if len(featured_insights) < limit:
+                all_shared = self.get_shared_insights()
+                for insight in all_shared:
+                    if (len(featured_insights) >= limit or 
+                        any(i.id == insight.id for i in featured_insights)):
+                        break
+                    featured_insights.append(insight)
+            
+            return featured_insights[:limit]
+            
+        except Exception as e:
+            logger.error(f"Error retrieving featured insights: {e}")
+            # Fallback: return most liked shared insights from memory
+            shared_insights = [insights for insights in insights_storage.values() if insights.is_shared]
+            shared_insights.sort(key=lambda x: getattr(x, 'likes', 0), reverse=True)
+            return shared_insights[:limit]
 
     def toggle_like(self, insight_id: str, user_id: str) -> bool:
         """Toggle like for an insight by a user"""

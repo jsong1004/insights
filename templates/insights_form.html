@@ -1,0 +1,366 @@
+{% extends "base_auth.html" %}
+
+{% block title %}Generate AI Insights - AI Insights Generator{% endblock %}
+
+{% block content %}
+<div class="text-center mb-4">
+    <h1 class="display-6 fw-bold text-dark mb-3">
+        <i class="fas fa-brain text-primary me-3"></i>AI Insights Generator
+    </h1>
+    <p class="lead text-muted">
+        Powered by CrewAI Multi-Agent System for intelligent research and analysis
+    </p>
+</div>
+
+<!-- Add this after the authentication notice -->
+<div id="usage-warning-container"></div>
+
+<script>
+// Check usage limits on page load
+async function checkUsageLimits() {
+    try {
+        const response = await fetch('/api/usage-stats');
+        const data = await response.json();
+        
+        if (data.success) {
+            const stats = data.stats;
+            const container = document.getElementById('usage-warning-container');
+            
+            // Show warnings if approaching limits
+            if (stats.remaining.daily_insights === 0) {
+                container.innerHTML = `
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <i class="fas fa-exclamation-circle me-2"></i>
+                        <strong>Daily limit reached!</strong> You've used all ${stats.limits.daily_insights} daily insights. 
+                        Come back tomorrow or <a href="{{ url_for('auth.membership') }}" class="alert-link">upgrade your plan</a>.
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                `;
+            } else if (stats.remaining.monthly_insights === 0) {
+                container.innerHTML = `
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <i class="fas fa-exclamation-circle me-2"></i>
+                        <strong>Monthly limit reached!</strong> You've used all ${stats.limits.monthly_insights} monthly insights. 
+                        <a href="{{ url_for('auth.membership') }}" class="alert-link">Upgrade your plan</a> to continue.
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                `;
+            } else if (stats.usage_percentage.insights > 80) {
+                container.innerHTML = `
+                    <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        You've used ${stats.current_usage.monthly_insights} of ${stats.limits.monthly_insights} monthly insights (${Math.round(stats.usage_percentage.insights)}%). 
+                        <a href="{{ url_for('auth.dashboard') }}" class="alert-link">View usage details</a>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                `;
+            }
+        }
+    } catch (error) {
+        console.error('Failed to check usage limits:', error);
+    }
+}
+
+// Check on page load
+checkUsageLimits();
+</script>
+
+<!-- Insights Generation Form -->
+<div class="insight-card">
+    <h2 class="insight-title">
+        <i class="fas fa-plus-circle text-primary me-2"></i>Generate New Insights
+    </h2>
+    
+    <form method="POST" action="{{ url_for('main.generate_insights') }}" data-loading>
+        <div class="row">
+            <div class="col-12 mb-4">
+                <label for="topic" class="form-label fw-semibold">
+                    <i class="fas fa-search me-2"></i>Research Topic
+                </label>
+                <input type="text" 
+                       class="form-control form-control-lg" 
+                       id="topic" 
+                       name="topic" 
+                       placeholder="e.g., Artificial Intelligence in Healthcare, Climate Change Solutions, Quantum Computing..."
+                       required
+                       maxlength="200">
+                <div class="form-text">
+                    Enter the main topic you want our AI agents to research and analyze
+                </div>
+            </div>
+            
+            <div class="col-md-6 mb-4">
+                <label for="source" class="form-label fw-semibold">
+                    <i class="fas fa-globe me-2"></i>Source Type
+                </label>
+                <select class="form-select" id="source" name="source">
+                    <option value="general" selected>General Web Search</option>
+                    <option value="news">News Articles</option>
+                    <option value="finance">Finance & Business</option>
+                </select>
+                <div class="form-text">
+                    Choose the type of sources to search for your research
+                </div>
+            </div>
+
+            <div class="col-md-6 mb-4">
+                <label for="time_range" class="form-label fw-semibold">
+                    <i class="fas fa-calendar-alt me-2"></i>Time Range
+                </label>
+                <select class="form-select" id="time_range" name="time_range">
+                    <option value="none" selected>None</option>
+                    <option value="day">Past Day</option>
+                    <option value="week">Past Week</option>
+                    <option value="month">Past Month</option>
+                    <option value="year">Past Year</option>
+                </select>
+                <div class="form-text">
+                    Filter results by publication date (optional)
+                </div>
+            </div>
+            
+            <div class="col-12 mb-4">
+                <label for="instructions" class="form-label fw-semibold">
+                    <i class="fas fa-clipboard-list me-2"></i>Specific Instructions (Optional)
+                </label>
+                <textarea class="form-control" 
+                          id="instructions" 
+                          name="instructions" 
+                          rows="4"
+                          placeholder="Provide specific guidance for the research:&#10;&#10;• Focus on recent developments (2023-2024)&#10;• Include market analysis and trends&#10;• Compare different approaches or solutions&#10;• Analyze potential risks and opportunities&#10;• Look for expert opinions and case studies&#10;&#10;The more specific your instructions, the better our AI agents can tailor the research to your needs."
+                          maxlength="1000"></textarea>
+                <div class="form-text">
+                    Optional: Provide specific instructions to guide the AI agents' research approach
+                </div>
+            </div>
+        </div>
+        
+        <div class="d-grid">
+            <button type="submit" class="btn btn-primary btn-lg" id="generate-insights-btn">
+                <span class="btn-text">
+                    <i class="fas fa-rocket me-2"></i>Generate Insights
+                </span>
+                <span class="loading-spinner">
+                    <i class="fas fa-spinner fa-spin me-2"></i>Generating Insights...
+                </span>
+            </button>
+        </div>
+    </form>
+</div>
+
+
+
+<!-- Example Topics -->
+<div class="insight-card">
+    <h3 class="insight-title">
+        <i class="fas fa-star text-primary me-2"></i>Example Topics
+    </h3>
+    
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <h6 class="fw-semibold text-primary">Technology & Innovation</h6>
+            <ul class="list-unstyled small text-muted">
+                <li class="clickable-topic"><i class="fas fa-chevron-right me-2"></i>Artificial Intelligence in Healthcare</li>
+                <li class="clickable-topic"><i class="fas fa-chevron-right me-2"></i>Quantum Computing Applications</li>
+                <li class="clickable-topic"><i class="fas fa-chevron-right me-2"></i>Blockchain in Supply Chain</li>
+                <li class="clickable-topic"><i class="fas fa-chevron-right me-2"></i>5G Network Implementation</li>
+            </ul>
+        </div>
+        
+        <div class="col-md-6 mb-3">
+            <h6 class="fw-semibold text-success">Business & Market</h6>
+            <ul class="list-unstyled small text-muted">
+                <li class="clickable-topic"><i class="fas fa-chevron-right me-2"></i>Remote Work Trends 2024</li>
+                <li class="clickable-topic"><i class="fas fa-chevron-right me-2"></i>Sustainable Business Practices</li>
+                <li class="clickable-topic"><i class="fas fa-chevron-right me-2"></i>E-commerce Market Analysis</li>
+                <li class="clickable-topic"><i class="fas fa-chevron-right me-2"></i>Startup Funding Landscape</li>
+            </ul>
+        </div>
+        
+        <div class="col-md-6 mb-3">
+            <h6 class="fw-semibold text-warning">Science & Environment</h6>
+            <ul class="list-unstyled small text-muted">
+                <li class="clickable-topic"><i class="fas fa-chevron-right me-2"></i>Climate Change Solutions</li>
+                <li class="clickable-topic"><i class="fas fa-chevron-right me-2"></i>Renewable Energy Innovations</li>
+                <li class="clickable-topic"><i class="fas fa-chevron-right me-2"></i>Space Exploration Progress</li>
+                <li class="clickable-topic"><i class="fas fa-chevron-right me-2"></i>Biotechnology Advances</li>
+            </ul>
+        </div>
+        
+        <div class="col-md-6 mb-3">
+            <h6 class="fw-semibold text-info">Society & Culture</h6>
+            <ul class="list-unstyled small text-muted">
+                <li class="clickable-topic"><i class="fas fa-chevron-right me-2"></i>Digital Privacy Rights</li>
+                <li class="clickable-topic"><i class="fas fa-chevron-right me-2"></i>Future of Education</li>
+                <li class="clickable-topic"><i class="fas fa-chevron-right me-2"></i>Social Media Impact</li>
+                <li class="clickable-topic"><i class="fas fa-chevron-right me-2"></i>Mental Health Awareness</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Start Guide -->
+<div class="insight-card border-primary">
+    <h3 class="insight-title text-primary">
+        <i class="fas fa-play-circle me-2"></i>Quick Start Guide
+    </h3>
+    
+    <div class="row align-items-center">
+        <div class="col-md-8">
+            <ol class="mb-0">
+                <li class="mb-2">
+                    <strong>Enter a topic</strong> you want to research (e.g., "AI in Healthcare")
+                </li>
+                <li class="mb-2">
+                    <strong>Add specific instructions</strong> to guide the research (optional but recommended)
+                </li>
+                <li class="mb-2">
+                    <strong>Click "Generate Insights"</strong> and wait for our AI agents to work
+                </li>
+                <li class="mb-0">
+                    <strong>Review the results</strong> with validated sources and confidence scores
+                </li>
+            </ol>
+        </div>
+        <div class="col-md-4 text-center">
+            <i class="fas fa-rocket fa-4x text-primary opacity-75"></i>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Character counters for form fields
+    document.addEventListener('DOMContentLoaded', function() {
+        const topicInput = document.getElementById('topic');
+        const instructionsTextarea = document.getElementById('instructions');
+        const insightsForm = document.querySelector('form[data-loading]');
+        const submitButton = insightsForm ? insightsForm.querySelector('button[type="submit"]') : null;
+        
+        // Add character counters
+        function addCharacterCounter(element, maxLength) {
+            const counter = document.createElement('div');
+            counter.className = 'form-text text-end';
+            counter.style.fontSize = '0.75rem';
+            element.parentNode.appendChild(counter);
+            
+            function updateCounter() {
+                const remaining = maxLength - element.value.length;
+                counter.textContent = `${element.value.length}/${maxLength} characters`;
+                counter.className = remaining < 20 ? 'form-text text-end text-warning' : 'form-text text-end text-muted';
+            }
+            
+            element.addEventListener('input', updateCounter);
+            updateCounter();
+        }
+        
+        if (topicInput) addCharacterCounter(topicInput, 200);
+        if (instructionsTextarea) addCharacterCounter(instructionsTextarea, 1000);
+        
+        // Auto-resize textarea
+        if (instructionsTextarea) {
+            instructionsTextarea.addEventListener('input', function() {
+                this.style.height = 'auto';
+                this.style.height = this.scrollHeight + 'px';
+            });
+        }
+        
+        // Handle form submission with loading state
+        if (insightsForm && submitButton) {
+            let isSubmitting = false; // Prevent double submissions
+            
+            insightsForm.addEventListener('submit', function(e) {
+                // Prevent double submissions
+                if (isSubmitting) {
+                    e.preventDefault();
+                    return false;
+                }
+                
+                // Validate required fields
+                const topic = topicInput.value.trim();
+                
+                if (!topic) {
+                    e.preventDefault();
+                    topicInput.focus();
+                    showFlashMessage('Please enter a research topic to continue.', 'warning');
+                    return false;
+                }
+                
+                // Set submission flag
+                isSubmitting = true;
+                
+                // Show loading state
+                showLoading(submitButton);
+                
+                // Show a flash message about the process
+                showFlashMessage(
+                    'AI agents are now researching your topic. This may take 1-2 minutes...', 
+                    'info'
+                );
+                
+                // Disable form fields
+                setTimeout(function() {
+                    topicInput.disabled = true;
+                    if (instructionsTextarea) {
+                        instructionsTextarea.disabled = true;
+                    }
+                    const sourceSelect = document.getElementById('source');
+                    const timeRangeSelect = document.getElementById('time_range');
+                    if (sourceSelect) sourceSelect.disabled = true;
+                    if (timeRangeSelect) timeRangeSelect.disabled = true;
+                }, 100);
+                
+                // Timeout safety measure
+                setTimeout(function() {
+                    hideLoading(submitButton);
+                    topicInput.disabled = false;
+                    if (instructionsTextarea) {
+                        instructionsTextarea.disabled = false;
+                    }
+                    const sourceSelect = document.getElementById('source');
+                    const timeRangeSelect = document.getElementById('time_range');
+                    if (sourceSelect) sourceSelect.disabled = false;
+                    if (timeRangeSelect) timeRangeSelect.disabled = false;
+                    isSubmitting = false;
+                }, 120000); // 2 minutes timeout
+            });
+        }
+        
+        // Example topic click handlers
+        document.querySelectorAll('.clickable-topic').forEach(function(item) {
+            item.style.cursor = 'pointer';
+            item.addEventListener('click', function() {
+                const topicText = this.textContent.replace(/^\s*\S+\s*/, ''); // Remove the chevron icon
+                if (topicInput) {
+                    topicInput.value = topicText.trim();
+                    topicInput.focus();
+                    topicInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    
+                    // Trigger input event to update character counter
+                    topicInput.dispatchEvent(new Event('input'));
+                }
+            });
+        });
+        
+        // Handle page visibility change to hide loading state if user navigates away and back
+        document.addEventListener('visibilitychange', function() {
+            if (!document.hidden && submitButton && submitButton.classList.contains('loading')) {
+                // User came back to the page and button is still in loading state
+                // Check if we're still on the form page (not redirected to results)
+                if (window.location.pathname === '{{ url_for("main.insights") }}') {
+                    hideLoading(submitButton);
+                    topicInput.disabled = false;
+                    if (instructionsTextarea) {
+                        instructionsTextarea.disabled = false;
+                    }
+                    const sourceSelect = document.getElementById('source');
+                    const timeRangeSelect = document.getElementById('time_range');
+                    if (sourceSelect) sourceSelect.disabled = false;
+                    if (timeRangeSelect) timeRangeSelect.disabled = false;
+                }
+            }
+        });
+    });
+</script>
+{% endblock %} 
