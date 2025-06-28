@@ -250,6 +250,21 @@ def profile():
                 'last_login': user_data.get('last_login')
             })
         
+        # Compute member type based on subscription
+        member_type = 'free'  # Default to free
+        if user_data and user_data.get('subscription'):
+            subscription = user_data['subscription']
+            plan = subscription.get('plan', 'free')
+            status = subscription.get('status', 'inactive')
+            
+            # Determine member type
+            if status == 'active' and plan in ['basic', 'pro', 'enterprise']:
+                member_type = 'freemium'
+            elif plan == 'freemium' or (status == 'active' and plan != 'free'):
+                member_type = 'freemium'
+        
+        profile_data['member_type'] = member_type
+        
         return render_template('auth/profile.html', profile_data=profile_data)
         
     except ImportError:
@@ -265,7 +280,8 @@ def profile():
                 'email_notifications': True,
                 'share_insights_by_default': True,
                 'theme': 'light'
-            }
+            },
+            'member_type': 'free'  # Default to free when no data available
         }
         return render_template('auth/profile.html', profile_data=profile_data)
 

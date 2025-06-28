@@ -101,7 +101,7 @@
                         </div>
                     </div>
 
-                    <div class="mb-4">
+                    <div class="mb-3">
                         <label for="theme" class="form-label">Theme Preference</label>
                         <select class="form-select" id="theme">
                             <option value="light" {{ 'selected' if profile_data.preferences.theme == 'light' else '' }}>Light</option>
@@ -111,13 +111,44 @@
                         <div class="form-text">Choose your preferred color scheme</div>
                     </div>
 
+
+
                     <!-- Account Information -->
-                    {% if profile_data.created_at or profile_data.last_login %}
+                    {% if profile_data.created_at or profile_data.last_login or profile_data.member_type %}
                     <div class="section-header">
                         <h5><i class="fas fa-info-circle me-2"></i>Account Information</h5>
                     </div>
 
                     <div class="row">
+                        <!-- Member Type -->
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Member Type</label>
+                            <div class="info-display">
+                                <div class="membership-actions">
+                                    <div class="current-membership mb-2">
+                                        {% if profile_data.member_type == 'freemium' %}
+                                        <span class="badge bg-warning text-dark">
+                                            <i class="fas fa-star me-1"></i>Freemium Member
+                                        </span>
+                                        {% else %}
+                                        <span class="badge bg-secondary">
+                                            <i class="fas fa-user me-1"></i>Free Member
+                                        </span>
+                                        {% endif %}
+                                    </div>
+                                    {% if profile_data.member_type == 'free' %}
+                                    <button type="button" class="btn btn-warning btn-sm" id="upgrade-membership">
+                                        <i class="fas fa-arrow-up me-2"></i>Upgrade Membership
+                                    </button>
+                                    {% else %}
+                                    <button type="button" class="btn btn-outline-secondary btn-sm" id="downgrade-membership">
+                                        <i class="fas fa-arrow-down me-2"></i>Downgrade Membership
+                                    </button>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
                         {% if profile_data.created_at %}
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Member Since</label>
@@ -255,6 +286,28 @@ setTimeout(() => {
         successAlert.classList.add('d-none');
     }
 }, 5000);
+
+// Membership action handlers
+document.addEventListener('DOMContentLoaded', function() {
+    const upgradeBtn = document.getElementById('upgrade-membership');
+    const downgradeBtn = document.getElementById('downgrade-membership');
+    
+    if (upgradeBtn) {
+        upgradeBtn.addEventListener('click', function() {
+            // TODO: Implement actual upgrade logic
+            alert('Upgrade functionality coming soon! This will redirect to the subscription upgrade page.');
+        });
+    }
+    
+    if (downgradeBtn) {
+        downgradeBtn.addEventListener('click', function() {
+            // TODO: Implement actual downgrade logic
+            if (confirm('Are you sure you want to downgrade your membership? You may lose access to premium features.')) {
+                alert('Downgrade functionality coming soon! This will process the membership downgrade.');
+            }
+        });
+    }
+});
 </script>
 
 <style>
@@ -328,6 +381,43 @@ setTimeout(() => {
     padding: 0.75rem;
     color: #64748b;
     font-weight: 500;
+}
+
+.member-type-display {
+    display: flex;
+    align-items: center;
+}
+
+.member-type.freemium {
+    color: #f59e0b;
+    font-weight: 600;
+}
+
+.member-type.free {
+    color: #6b7280;
+    font-weight: 500;
+}
+
+.membership-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.current-membership .badge {
+    font-size: 0.875rem;
+    padding: 0.5rem 0.75rem;
+}
+
+.membership-actions .btn {
+    align-self: flex-start;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.membership-actions .btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .btn-primary {
