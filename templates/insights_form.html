@@ -150,83 +150,8 @@ checkUsageLimits();
 
 
 
-<!-- Example Topics -->
-<div class="insight-card">
-    <h3 class="insight-title">
-        <i class="fas fa-star text-primary me-2"></i>Example Topics
-    </h3>
-    
-    <div class="row">
-        <div class="col-md-6 mb-3">
-            <h6 class="fw-semibold text-primary">Technology & Innovation</h6>
-            <ul class="list-unstyled small text-muted">
-                <li class="clickable-topic"><i class="fas fa-chevron-right me-2"></i>Artificial Intelligence in Healthcare</li>
-                <li class="clickable-topic"><i class="fas fa-chevron-right me-2"></i>Quantum Computing Applications</li>
-                <li class="clickable-topic"><i class="fas fa-chevron-right me-2"></i>Blockchain in Supply Chain</li>
-                <li class="clickable-topic"><i class="fas fa-chevron-right me-2"></i>5G Network Implementation</li>
-            </ul>
-        </div>
-        
-        <div class="col-md-6 mb-3">
-            <h6 class="fw-semibold text-success">Business & Market</h6>
-            <ul class="list-unstyled small text-muted">
-                <li class="clickable-topic"><i class="fas fa-chevron-right me-2"></i>Remote Work Trends 2024</li>
-                <li class="clickable-topic"><i class="fas fa-chevron-right me-2"></i>Sustainable Business Practices</li>
-                <li class="clickable-topic"><i class="fas fa-chevron-right me-2"></i>E-commerce Market Analysis</li>
-                <li class="clickable-topic"><i class="fas fa-chevron-right me-2"></i>Startup Funding Landscape</li>
-            </ul>
-        </div>
-        
-        <div class="col-md-6 mb-3">
-            <h6 class="fw-semibold text-warning">Science & Environment</h6>
-            <ul class="list-unstyled small text-muted">
-                <li class="clickable-topic"><i class="fas fa-chevron-right me-2"></i>Climate Change Solutions</li>
-                <li class="clickable-topic"><i class="fas fa-chevron-right me-2"></i>Renewable Energy Innovations</li>
-                <li class="clickable-topic"><i class="fas fa-chevron-right me-2"></i>Space Exploration Progress</li>
-                <li class="clickable-topic"><i class="fas fa-chevron-right me-2"></i>Biotechnology Advances</li>
-            </ul>
-        </div>
-        
-        <div class="col-md-6 mb-3">
-            <h6 class="fw-semibold text-info">Society & Culture</h6>
-            <ul class="list-unstyled small text-muted">
-                <li class="clickable-topic"><i class="fas fa-chevron-right me-2"></i>Digital Privacy Rights</li>
-                <li class="clickable-topic"><i class="fas fa-chevron-right me-2"></i>Future of Education</li>
-                <li class="clickable-topic"><i class="fas fa-chevron-right me-2"></i>Social Media Impact</li>
-                <li class="clickable-topic"><i class="fas fa-chevron-right me-2"></i>Mental Health Awareness</li>
-            </ul>
-        </div>
-    </div>
-</div>
 
-<!-- Quick Start Guide -->
-<div class="insight-card border-primary">
-    <h3 class="insight-title text-primary">
-        <i class="fas fa-play-circle me-2"></i>Quick Start Guide
-    </h3>
-    
-    <div class="row align-items-center">
-        <div class="col-md-8">
-            <ol class="mb-0">
-                <li class="mb-2">
-                    <strong>Enter a topic</strong> you want to research (e.g., "AI in Healthcare")
-                </li>
-                <li class="mb-2">
-                    <strong>Add specific instructions</strong> to guide the research (optional but recommended)
-                </li>
-                <li class="mb-2">
-                    <strong>Click "Generate Insights"</strong> and wait for our AI agents to work
-                </li>
-                <li class="mb-0">
-                    <strong>Review the results</strong> with validated sources and confidence scores
-                </li>
-            </ol>
-        </div>
-        <div class="col-md-4 text-center">
-            <i class="fas fa-rocket fa-4x text-primary opacity-75"></i>
-        </div>
-    </div>
-</div>
+
 {% endblock %}
 
 {% block scripts %}
@@ -327,21 +252,7 @@ checkUsageLimits();
             });
         }
         
-        // Example topic click handlers
-        document.querySelectorAll('.clickable-topic').forEach(function(item) {
-            item.style.cursor = 'pointer';
-            item.addEventListener('click', function() {
-                const topicText = this.textContent.replace(/^\s*\S+\s*/, ''); // Remove the chevron icon
-                if (topicInput) {
-                    topicInput.value = topicText.trim();
-                    topicInput.focus();
-                    topicInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    
-                    // Trigger input event to update character counter
-                    topicInput.dispatchEvent(new Event('input'));
-                }
-            });
-        });
+
         
         // Handle page visibility change to hide loading state if user navigates away and back
         document.addEventListener('visibilitychange', function() {
