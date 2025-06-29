@@ -350,58 +350,246 @@ class FirestoreManager:
             shared_insights.sort(key=lambda x: getattr(x, 'likes', 0), reverse=True)
             return shared_insights[:limit]
 
-    def toggle_like(self, insight_id: str, user_id: str) -> bool:
-        """Toggle like for an insight by a user"""
+    def add_like(self, insight_id, user_id):
+        """Add a like to an insight (one-time only)"""
         try:
-            if self.use_firestore and self.db:
-                doc_ref = self.db.collection(FIRESTORE_COLLECTION).document(insight_id)
-                
-                @firestore.transactional
-                def update_likes(transaction):
-                    doc = doc_ref.get(transaction=transaction)
-                    if doc.exists:
-                        data = doc.to_dict()
-                        liked_by = data.get('liked_by', [])
-                        likes = data.get('likes', 0)
-                        
-                        if user_id in liked_by:
-                            liked_by.remove(user_id)
-                            likes = max(0, likes - 1)
-                        else:
-                            liked_by.append(user_id)
-                            likes += 1
-                        
-                        transaction.update(doc_ref, {
-                            'liked_by': liked_by,
-                            'likes': likes,
-                            'updated_at': firestore.SERVER_TIMESTAMP
-                        })
-                        
-                        if insight_id in insights_storage:
-                            insights_storage[insight_id].liked_by = liked_by
-                            insights_storage[insight_id].likes = likes
-                        
-                        return True
-                    return False
-                
-                transaction = self.db.transaction()
-                return update_likes(transaction)
+            insight_ref = self.db.collection('insights').document(insight_id)
             
+            # Use transaction to ensure atomicity
+            @firestore.transactional
+            def add_like_transaction(transaction):
+                # Get current insight data
+                insight_doc = insight_ref.get(transaction=transaction)
+                if not insight_doc.exists:
+                    return None
+                
+                insight_data = insight_doc.to_dict()
+                
+                # Check if user already liked
+                liked_by = insight_data.get('liked_by', [])
+                if user_id in liked_by:
+                    return None  # User already liked this insight
+                
+                # Add user to liked_by list and increment likes count
+                liked_by.append(user_id)
+                likes_count = insight_data.get('likes', 0) + 1
+                
+                # Update the document
+                transaction.update(insight_ref, {
+                    'liked_by': liked_by,
+                    'likes': likes_count
+                })
+                
+                # Return updated data
+                insight_data['liked_by'] = liked_by
+                insight_data['likes'] = likes_count
+                return insight_data
+            
+            # Execute transaction
+            transaction = self.db.transaction()
+            result = add_like_transaction(transaction)
+            
+            if result:
+                print(f"Successfully added like to insight {insight_id} by user {user_id}")
+                return result
             else:
-                if insight_id in insights_storage:
-                    insight = insights_storage[insight_id]
-                    if user_id in insight.liked_by:
-                        insight.liked_by.remove(user_id)
-                        insight.likes = max(0, insight.likes - 1)
-                    else:
-                        insight.liked_by.append(user_id)
-                        insight.likes += 1
-                    return True
-                return False
+                print(f"Failed to add like - user {user_id} already liked insight {insight_id}")
+                return None
                 
         except Exception as e:
-            logger.error(f"Error toggling like for insight {insight_id}: {e}")
+            print(f"Error adding like to insight {insight_id}: {str(e)}")
+            return None
+
+    def toggle_like(self, insight_id, user_id):
+        """Toggle like for an insight (deprecated - use add_like for one-time likes)"""
+        try:
+            insight_ref = self.db.collection('insights').document(insight_id)
+            
+            # Use transaction to ensure atomicity
+            @firestore.transactional
+            def toggle_like_transaction(transaction):
+                # Get current insight data
+                insight_doc = insight_ref.get(transaction=transaction)
+                if not insight_doc.exists:
+                    return False
+                
+                insight_data = insight_doc.to_dict()
+                
+                # Get current liked_by list
+                liked_by = insight_data.get('liked_by', [])
+                likes_count = insight_data.get('likes', 0)
+                
+                if user_id in liked_by:
+                    # Remove like
+                    liked_by.remove(user_id)
+                    likes_count = max(0, likes_count - 1)
+                else:
+                    # Add like
+                    liked_by.append(user_id)
+                    likes_count += 1
+                
+                # Update the document
+                transaction.update(insight_ref, {
+                    'liked_by': liked_by,
+                    'likes': likes_count
+                })
+                
+                return True
+            
+            # Execute transaction
+            transaction = self.db.transaction()
+            return toggle_like_transaction(transaction)
+            
+        except Exception as e:
+            print(f"Error toggling like for insight {insight_id}: {str(e)}")
             return False
+
+    def toggle_dislike(self, insight_id, user_id):
+        """Toggle dislike for an insight (deprecated - dislike functionality removed)"""
+        print(f"Dislike functionality has been removed")
+        return False
+
+    def get_trending_insights(self, limit: int = 10) -> List[GeneratedInsights]:
+        """Get trending insights based on recent activity (likes/dislikes in past 24-48 hours)"""
+        from datetime import datetime, timedelta
+        
+        trending_insights = []
+        
+        try:
+            # Calculate trending score based on recent activity
+            now = datetime.now()
+            two_days_ago = now - timedelta(days=2)
+            
+            if self.use_firestore and self.db:
+                # Get recent shared insights
+                docs = self.db.collection(FIRESTORE_COLLECTION)\
+                    .where('is_shared', '==', True)\
+                    .where('created_at', '>=', two_days_ago)\
+                    .stream()
+                
+                for doc in docs:
+                    try:
+                        data = doc.to_dict()
+                        data.pop('created_at', None)
+                        data.pop('updated_at', None)
+                        
+                        insights = GeneratedInsights(**data)
+                        trending_insights.append(insights)
+                        
+                    except Exception as e:
+                        logger.warning(f"Error parsing trending insight document {doc.id}: {e}")
+                        continue
+            
+            # Add insights from memory
+            for insight_id, insights in insights_storage.items():
+                if (insights.is_shared and 
+                    not any(i.id == insight_id for i in trending_insights)):
+                    try:
+                        if isinstance(insights.timestamp, str):
+                            insight_date = datetime.fromisoformat(insights.timestamp.replace('Z', '+00:00'))
+                        else:
+                            insight_date = insights.timestamp
+                        
+                        if insight_date >= two_days_ago:
+                            trending_insights.append(insights)
+                    except Exception as e:
+                        logger.warning(f"Error parsing timestamp for trending insight {insight_id}: {e}")
+                        # Include recent ones anyway
+                        trending_insights.append(insights)
+            
+            # Calculate trending score: (likes - dislikes) / hours_since_creation
+            def calculate_trending_score(insight):
+                try:
+                    likes = getattr(insight, 'likes', 0) or 0
+                    dislikes = getattr(insight, 'dislikes', 0) or 0
+                    
+                    if isinstance(insight.timestamp, str):
+                        created_date = datetime.fromisoformat(insight.timestamp.replace('Z', '+00:00'))
+                    else:
+                        created_date = insight.timestamp
+                    
+                    hours_since = max(1, (now - created_date).total_seconds() / 3600)  # Minimum 1 hour
+                    
+                    # Trending score: engagement rate adjusted by time decay
+                    engagement = likes - (dislikes * 0.5)  # Dislikes have less negative impact
+                    score = max(0, engagement) / (hours_since ** 0.5)  # Square root decay
+                    
+                    return score
+                except Exception as e:
+                    logger.warning(f"Error calculating trending score for insight {insight.id}: {e}")
+                    return 0
+            
+            # Sort by trending score
+            trending_insights.sort(key=calculate_trending_score, reverse=True)
+            
+            return trending_insights[:limit]
+            
+        except Exception as e:
+            logger.error(f"Error retrieving trending insights: {e}")
+            # Fallback: return most recent shared insights
+            shared_insights = self.get_shared_insights()
+            return shared_insights[:limit]
+
+    def get_most_liked_insights(self, limit: int = 10) -> List[GeneratedInsights]:
+        """Get most liked insights"""
+        try:
+            most_liked = []
+            
+            if self.use_firestore and self.db:
+                # Get all shared insights first (simpler query without composite index)
+                docs = self.db.collection(FIRESTORE_COLLECTION)\
+                    .where('is_shared', '==', True)\
+                    .stream()
+                
+                # Filter and sort in Python to avoid needing composite index
+                firestore_insights = []
+                for doc in docs:
+                    try:
+                        data = doc.to_dict()
+                        likes = data.get('likes', 0) or 0
+                        
+                        # Only include insights with likes > 0
+                        if likes > 0:
+                            data.pop('created_at', None)
+                            data.pop('updated_at', None)
+                            
+                            insights = GeneratedInsights(**data)
+                            firestore_insights.append(insights)
+                            
+                    except Exception as e:
+                        logger.warning(f"Error parsing most liked insight document {doc.id}: {e}")
+                        continue
+                
+                # Sort by likes in Python
+                firestore_insights.sort(key=lambda x: getattr(x, 'likes', 0), reverse=True)
+                most_liked.extend(firestore_insights[:limit])
+            
+            # Supplement with memory storage if needed
+            if len(most_liked) < limit:
+                memory_insights = []
+                for insight_id, insights in insights_storage.items():
+                    if (insights.is_shared and 
+                        getattr(insights, 'likes', 0) > 0 and
+                        not any(i.id == insight_id for i in most_liked)):
+                        memory_insights.append(insights)
+                
+                # Sort by likes
+                memory_insights.sort(key=lambda x: getattr(x, 'likes', 0), reverse=True)
+                remaining_needed = limit - len(most_liked)
+                most_liked.extend(memory_insights[:remaining_needed])
+            
+            # Final sort to ensure proper ordering
+            most_liked.sort(key=lambda x: getattr(x, 'likes', 0), reverse=True)
+            
+            return most_liked[:limit]
+            
+        except Exception as e:
+            logger.error(f"Error retrieving most liked insights: {e}")
+            # Fallback: return shared insights sorted by likes from memory
+            shared_insights = [insights for insights in insights_storage.values() 
+                             if insights.is_shared and getattr(insights, 'likes', 0) > 0]
+            shared_insights.sort(key=lambda x: getattr(x, 'likes', 0), reverse=True)
+            return shared_insights[:limit]
 
     def update_sharing_status(self, insight_id: str, is_shared: bool, user_id: str) -> bool:
         """Update the sharing status of an insight"""

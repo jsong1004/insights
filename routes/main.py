@@ -198,6 +198,71 @@ def download_insights(insight_id):
     html_content = render_template('download_report.html', insights=insights)
     response = make_response(html_content)
     response.headers['Content-Type'] = 'text/html; charset=utf-8'
-    response.headers['Content-Disposition'] = f'attachment; filename="AI_Insights_Report_{insights.topic.replace(" ", "_")}_{insights.timestamp[:10]}.html"'
+    response.headers['Content-Disposition'] = f'attachment; filename="insights_{insight_id}.html"'
     
     return response
+
+@main_bp.route('/community')
+def community():
+    """Community page showing shared insights with modern social features"""
+    sort_by = request.args.get('sort', 'recent')  # recent, trending, most_liked, featured
+    page = request.args.get('page', 1, type=int)
+    per_page = 10
+    
+    try:
+        # Get insights based on sort type
+        if sort_by == 'trending':
+            insights_list = insights_firestore_manager.get_trending_insights(limit=per_page * 5)
+        elif sort_by == 'most_liked':
+            insights_list = insights_firestore_manager.get_most_liked_insights(limit=per_page * 5)
+        elif sort_by == 'featured':
+            insights_list = insights_firestore_manager.get_featured_insights(limit=per_page * 5)
+        else:  # recent
+            insights_list = insights_firestore_manager.get_shared_insights()
+        
+        # Simple pagination
+        total_insights = len(insights_list)
+        start_idx = (page - 1) * per_page
+        end_idx = start_idx + per_page
+        paginated_insights = insights_list[start_idx:end_idx]
+        
+        # Create pagination object
+        total_pages = (total_insights + per_page - 1) // per_page if total_insights > 0 else 1
+        
+        class SimplePagination:
+            def __init__(self, page, per_page, total, items):
+                self.page = page
+                self.per_page = per_page
+                self.total = total
+                self.pages = total_pages
+                self.has_prev = page > 1
+                self.has_next = page < total_pages
+                self.prev_num = page - 1 if self.has_prev else None
+                self.next_num = page + 1 if self.has_next else None
+                self.items = items
+            
+            def iter_pages(self, left_edge=2, left_current=2, right_current=3, right_edge=2):
+                last = self.pages
+                for num in range(1, last + 1):
+                    if num <= left_edge or \
+                       (self.page - left_current - 1 < num < self.page + right_current) or \
+                       num > last - right_edge:
+                        yield num
+        
+        pagination = SimplePagination(page, per_page, total_insights, paginated_insights)
+        
+        return render_template('community.html', 
+                             insights=paginated_insights,
+                             sort_by=sort_by,
+                             pagination=pagination)
+        
+    except Exception as e:
+        logger.error(f"Error loading community page: {e}")
+        flash('Failed to load community insights. Please try again.', 'error')
+        return redirect(url_for('main.index'))
+
+# Route alias for backward compatibility
+@main_bp.route('/view_insights/<insight_id>')
+def view_insights(insight_id):
+    """Alias for view_insight for backward compatibility"""
+    return view_insight(insight_id)
