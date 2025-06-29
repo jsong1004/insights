@@ -55,57 +55,8 @@
     <div class="main-content">
                 <div class="container">
             <div class="row">
-                <!-- Main Content: How It Works & Example Topics -->
+                <!-- Main Content: Example Topics -->
                 <div class="col-12">
-                    <!-- How It Works -->
-                    <div class="how-it-works mb-5">
-                        <div class="section-header">
-                            <h2><i class="fas fa-cogs me-2"></i>How It Works</h2>
-                        </div>
-                        
-                        <div class="steps-container">
-                            <div class="step-item">
-                                <div class="step-icon research">
-                                    <i class="fas fa-search"></i>
-                                </div>
-                                <div class="step-content">
-                                    <h5>1. Research</h5>
-                                    <p>AI Research Agent searches for comprehensive, up-to-date information on your topic</p>
-                                </div>
-                            </div>
-                            
-                            <div class="step-item">
-                                <div class="step-icon validate">
-                                    <i class="fas fa-shield-alt"></i>
-                                </div>
-                                <div class="step-content">
-                                    <h5>2. Validate</h5>
-                                    <p>Validation Agent checks source credibility and assigns confidence scores</p>
-                                </div>
-                            </div>
-                            
-                            <div class="step-item">
-                                <div class="step-icon analyze">
-                                    <i class="fas fa-lightbulb"></i>
-                                </div>
-                                <div class="step-content">
-                                    <h5>3. Analyze</h5>
-                                    <p>Insights Agent creates meaningful analysis and actionable intelligence</p>
-                                </div>
-                            </div>
-                            
-                            <div class="step-item">
-                                <div class="step-icon present">
-                                    <i class="fas fa-chart-line"></i>
-                                </div>
-                                <div class="step-content">
-                                    <h5>4. Present</h5>
-                                    <p>Structured insights with sources, confidence scores, and practical applications</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
                     <!-- Example Topics -->
                     <div class="example-topics">
                         <div class="section-header">
@@ -266,57 +217,16 @@
 }
 
 
-.how-it-works, .example-topics {
+.example-topics {
     background: white;
     border-radius: 20px;
     padding: 2rem;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
 }
 
-.steps-container {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-}
-
-.step-item {
-    display: flex;
-    align-items: flex-start;
-    gap: 1rem;
-}
-
-.step-icon {
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.5rem;
-    color: white;
-    flex-shrink: 0;
-}
-
-.step-icon.research { background: #3b82f6; }
-.step-icon.validate { background: #059669; }
-.step-icon.analyze { background: #f59e0b; }
-.step-icon.present { background: #06b6d4; }
-
-.step-content h5 {
-    margin-bottom: 0.5rem;
-    color: #2d3748;
-    font-weight: 600;
-}
-
-.step-content p {
-    color: #718096;
-    font-size: 0.95rem;
-    margin: 0;
-}
-
 .topics-grid {
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     gap: 1.5rem;
 }
 
@@ -373,7 +283,48 @@
     opacity: 0.9;
 }
 
+/* Custom button styles for hero section - Better visibility */
+.hero-section .btn-outline-primary {
+    background: rgba(255, 255, 255, 0.15);
+    border: 2px solid rgba(255, 255, 255, 0.9);
+    color: white !important;
+    font-weight: 600;
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+}
 
+.hero-section .btn-outline-primary:hover {
+    background: rgba(255, 255, 255, 0.25);
+    border-color: white;
+    color: white !important;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(255, 255, 255, 0.2);
+}
+
+.hero-section .btn-outline-primary:focus {
+    background: rgba(255, 255, 255, 0.25);
+    border-color: white;
+    color: white !important;
+    box-shadow: 0 0 0 0.2rem rgba(255, 255, 255, 0.25);
+}
+
+/* Also apply to CTA section for consistency */
+.cta-section .btn-outline-primary {
+    background: rgba(255, 255, 255, 0.15);
+    border: 2px solid rgba(255, 255, 255, 0.9);
+    color: white !important;
+    font-weight: 600;
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+}
+
+.cta-section .btn-outline-primary:hover {
+    background: rgba(255, 255, 255, 0.25);
+    border-color: white;
+    color: white !important;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(255, 255, 255, 0.2);
+}
 
 @keyframes float {
     0%, 100% { transform: translateY(0px); }
@@ -393,13 +344,8 @@
         font-size: 2rem;
     }
     
-    .step-item {
-        flex-direction: column;
-        text-align: center;
-    }
-    
-    .step-icon {
-        margin: 0 auto;
+    .topics-grid {
+        grid-template-columns: 1fr;
     }
 }
 </style>

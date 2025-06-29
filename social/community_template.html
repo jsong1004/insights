@@ -1,0 +1,825 @@
+{% extends "base.html" %}
+
+{% block title %}Community Insights - AI Insights Generator{% endblock %}
+
+{% block content %}
+<div class="community-page">
+    <!-- Header Section -->
+    <div class="community-header">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="display-6 fw-bold text-dark mb-2">
+                    <i class="fas fa-users text-primary me-3"></i>Community Insights
+                </h1>
+                <p class="lead text-muted mb-0">
+                    Discover and explore insights shared by our community
+                </p>
+            </div>
+            
+            <!-- Community Stats -->
+            <div class="community-stats d-none d-lg-block">
+                <div class="d-flex gap-3" id="community-stats-container">
+                    <div class="stat-item">
+                        <div class="stat-number" id="total-insights">--</div>
+                        <div class="stat-label">Insights</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number" id="total-likes">--</div>
+                        <div class="stat-label">Likes</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number" id="total-authors">--</div>
+                        <div class="stat-label">Authors</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search and Filter Bar -->
+    <div class="filter-bar">
+        <div class="row align-items-center mb-4">
+            <!-- Search Form -->
+            <div class="col-md-6">
+                <form method="GET" action="{{ url_for('main.community_search') }}" class="search-form">
+                    <div class="input-group">
+                        <input type="text" 
+                               class="form-control form-control-lg" 
+                               name="q" 
+                               placeholder="Search insights by topic or content..."
+                               value="{{ search_query or '' }}">
+                        <input type="hidden" name="sort" value="{{ sort_by }}">
+                        <button class="btn btn-primary" type="submit">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- Sort Options -->
+            <div class="col-md-6">
+                <div class="d-flex justify-content-end align-items-center gap-3">
+                    <span class="text-muted fw-semibold">Sort by:</span>
+                    <div class="btn-group" role="group">
+                        <input type="radio" class="btn-check" name="sort" id="sort-recent" value="recent" 
+                               {{ 'checked' if sort_by == 'recent' else '' }}>
+                        <label class="btn btn-outline-primary" for="sort-recent">
+                            <i class="fas fa-clock me-1"></i>Recent
+                        </label>
+                        
+                        <input type="radio" class="btn-check" name="sort" id="sort-likes" value="likes"
+                               {{ 'checked' if sort_by == 'likes' else '' }}>
+                        <label class="btn btn-outline-primary" for="sort-likes">
+                            <i class="fas fa-heart me-1"></i>Most Liked
+                        </label>
+                        
+                        <input type="radio" class="btn-check" name="sort" id="sort-pinned" value="pinned"
+                               {{ 'checked' if sort_by == 'pinned' else '' }}>
+                        <label class="btn btn-outline-primary" for="sort-pinned">
+                            <i class="fas fa-thumbtack me-1"></i>Pinned
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Active Filters -->
+        {% if search_query %}
+        <div class="active-filters mb-3">
+            <span class="badge bg-primary me-2">
+                <i class="fas fa-search me-1"></i>
+                Searching: "{{ search_query }}"
+                <a href="{{ url_for('main.community') }}" class="text-white ms-1">
+                    <i class="fas fa-times"></i>
+                </a>
+            </span>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Trending Topics Sidebar -->
+    <div class="row">
+        <div class="col-lg-9">
+            <!-- Insights Grid -->
+            <div class="insights-grid">
+                {% if insights_list %}
+                    <div class="row g-4">
+                        {% for insight in insights_list %}
+                        <div class="col-md-6 col-xl-4">
+                            <div class="insight-preview-card {{ 'pinned' if insight.is_pinned else '' }}" 
+                                 data-insight-id="{{ insight.id }}">
+                                
+                                <!-- Pin Badge -->
+                                {% if insight.is_pinned %}
+                                <div class="pin-badge">
+                                    <i class="fas fa-thumbtack"></i>
+                                    Pinned
+                                </div>
+                                {% endif %}
+                                
+                                <!-- Card Header -->
+                                <div class="card-header">
+                                    <h5 class="insight-title">
+                                        <a href="{{ url_for('main.view_insight', insight_id=insight.id) }}" 
+                                           class="text-decoration-none">
+                                            {{ insight.topic }}
+                                        </a>
+                                    </h5>
+                                    <div class="insight-meta">
+                                        <small class="text-muted">
+                                            <i class="fas fa-user me-1"></i>
+                                            {{ insight.author_name or 'Anonymous' }}
+                                        </small>
+                                        <small class="text-muted ms-2">
+                                            <i class="fas fa-calendar me-1"></i>
+                                            {{ moment(insight.timestamp).fromNow() if moment else insight.timestamp[:10] }}
+                                        </small>
+                                    </div>
+                                </div>
+                                
+                                <!-- Card Body -->
+                                <div class="card-body">
+                                    {% if insight.insights and insight.insights|length > 0 %}
+                                    <p class="insight-preview">
+                                        {{ insight.insights[0].summary[:150] }}...
+                                    </p>
+                                    
+                                    <!-- Insight Stats -->
+                                    <div class="insight-stats">
+                                        <span class="badge bg-light text-dark me-2">
+                                            <i class="fas fa-brain me-1"></i>
+                                            {{ insight.total_insights }} insights
+                                        </span>
+                                        {% if insight.insights[0].confidence_score %}
+                                        <span class="badge bg-success me-2">
+                                            {{ (insight.insights[0].confidence_score * 100)|round|int }}% confidence
+                                        </span>
+                                        {% endif %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <!-- Card Footer -->
+                                <div class="card-footer">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <!-- Like Button -->
+                                        {% if session.user_id %}
+                                        <button class="btn btn-sm like-btn {{ 'btn-danger' if session.user_id in insight.liked_by else 'btn-outline-danger' }}" 
+                                                data-insight-id="{{ insight.id }}"
+                                                data-liked="{{ 'true' if session.user_id in insight.liked_by else 'false' }}"
+                                                onclick="toggleLike('{{ insight.id }}', this)">
+                                            <i class="fas fa-heart me-1"></i>
+                                            <span class="like-count">{{ insight.likes or 0 }}</span>
+                                        </button>
+                                        {% else %}
+                                        <span class="btn btn-sm btn-outline-secondary" disabled>
+                                            <i class="fas fa-heart me-1"></i>
+                                            {{ insight.likes or 0 }}
+                                        </span>
+                                        {% endif %}
+                                        
+                                        <!-- Admin Pin Button -->
+                                        {% if session.user_id and is_admin %}
+                                        <button class="btn btn-sm btn-outline-warning pin-btn" 
+                                                data-insight-id="{{ insight.id }}"
+                                                data-pinned="{{ 'true' if insight.is_pinned else 'false' }}"
+                                                onclick="togglePin('{{ insight.id }}', this)"
+                                                title="{{ 'Unpin' if insight.is_pinned else 'Pin' }} this insight">
+                                            <i class="fas fa-thumbtack"></i>
+                                        </button>
+                                        {% endif %}
+                                        
+                                        <!-- View Button -->
+                                        <a href="{{ url_for('main.view_insight', insight_id=insight.id) }}" 
+                                           class="btn btn-sm btn-primary">
+                                            <i class="fas fa-eye me-1"></i>
+                                            View
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <!-- Pagination -->
+                    {% if pagination.pages > 1 %}
+                    <nav aria-label="Community insights pagination" class="mt-5">
+                        <ul class="pagination justify-content-center">
+                            {% if pagination.has_prev %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('main.community_search' if search_query else 'main.community', 
+                                                                    q=search_query, sort=sort_by, page=pagination.prev_num) }}">
+                                    <i class="fas fa-chevron-left"></i>
+                                </a>
+                            </li>
+                            {% endif %}
+                            
+                            {% for page_num in range(1, pagination.pages + 1) %}
+                                {% if page_num == pagination.page %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ page_num }}</span>
+                                </li>
+                                {% elif page_num <= 3 or page_num > pagination.pages - 3 or (page_num >= pagination.page - 1 and page_num <= pagination.page + 1) %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('main.community_search' if search_query else 'main.community', 
+                                                                        q=search_query, sort=sort_by, page=page_num) }}">
+                                        {{ page_num }}
+                                    </a>
+                                </li>
+                                {% elif page_num == 4 or page_num == pagination.pages - 3 %}
+                                <li class="page-item disabled">
+                                    <span class="page-link">...</span>
+                                </li>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if pagination.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('main.community_search' if search_query else 'main.community', 
+                                                                    q=search_query, sort=sort_by, page=pagination.next_num) }}">
+                                    <i class="fas fa-chevron-right"></i>
+                                </a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                    {% endif %}
+                    
+                {% else %}
+                    <!-- Empty State -->
+                    <div class="empty-state text-center py-5">
+                        {% if search_query %}
+                        <i class="fas fa-search fa-4x text-muted mb-4"></i>
+                        <h3 class="text-muted">No results found</h3>
+                        <p class="text-muted mb-4">
+                            No insights found for "<strong>{{ search_query }}</strong>". 
+                            Try a different search term or browse all insights.
+                        </p>
+                        <a href="{{ url_for('main.community') }}" class="btn btn-primary">
+                            <i class="fas fa-arrow-left me-2"></i>Browse All Insights
+                        </a>
+                        {% else %}
+                        <i class="fas fa-users fa-4x text-muted mb-4"></i>
+                        <h3 class="text-muted">No insights shared yet</h3>
+                        <p class="text-muted mb-4">
+                            Be the first to share your insights with the community!
+                        </p>
+                        {% if session.user_id %}
+                        <a href="{{ url_for('main.insights') }}" class="btn btn-primary">
+                            <i class="fas fa-plus me-2"></i>Generate Your First Insight
+                        </a>
+                        {% else %}
+                        <a href="{{ url_for('auth.signup') }}" class="btn btn-primary">
+                            <i class="fas fa-user-plus me-2"></i>Join the Community
+                        </a>
+                        {% endif %}
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Sidebar -->
+        <div class="col-lg-3">
+            <div class="sidebar-content">
+                <!-- Trending Topics -->
+                <div class="sidebar-card">
+                    <h5 class="sidebar-title">
+                        <i class="fas fa-fire text-warning me-2"></i>
+                        Trending Topics
+                    </h5>
+                    <div id="trending-topics-container">
+                        <div class="text-center py-3">
+                            <div class="spinner-border spinner-border-sm text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Community Guidelines -->
+                <div class="sidebar-card">
+                    <h5 class="sidebar-title">
+                        <i class="fas fa-info-circle text-info me-2"></i>
+                        Community Guidelines
+                    </h5>
+                    <ul class="guideline-list">
+                        <li>Share high-quality, well-researched insights</li>
+                        <li>Be respectful and constructive in interactions</li>
+                        <li>Use descriptive titles for your insights</li>
+                        <li>Like and engage with content you find valuable</li>
+                        <li>Report inappropriate content to moderators</li>
+                    </ul>
+                </div>
+                
+                <!-- Quick Actions -->
+                {% if session.user_id %}
+                <div class="sidebar-card">
+                    <h5 class="sidebar-title">
+                        <i class="fas fa-lightning-bolt text-warning me-2"></i>
+                        Quick Actions
+                    </h5>
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('main.insights') }}" class="btn btn-primary btn-sm">
+                            <i class="fas fa-plus me-2"></i>Create Insight
+                        </a>
+                        <a href="{{ url_for('auth.dashboard') }}" class="btn btn-outline-secondary btn-sm">
+                            <i class="fas fa-tachometer-alt me-2"></i>My Dashboard
+                        </a>
+                        <a href="{{ url_for('api.api_my_insights') }}" class="btn btn-outline-info btn-sm">
+                            <i class="fas fa-eye me-2"></i>My Insights
+                        </a>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Load community stats
+    loadCommunityStats();
+    
+    // Load trending topics
+    loadTrendingTopics();
+    
+    // Handle sort option changes
+    document.querySelectorAll('input[name="sort"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            if (this.checked) {
+                const currentUrl = new URL(window.location);
+                currentUrl.searchParams.set('sort', this.value);
+                currentUrl.searchParams.delete('page'); // Reset to first page
+                window.location.href = currentUrl.toString();
+            }
+        });
+    });
+    
+    // Handle search form
+    const searchForm = document.querySelector('.search-form');
+    if (searchForm) {
+        searchForm.addEventListener('submit', function(e) {
+            const searchInput = this.querySelector('input[name="q"]');
+            if (!searchInput.value.trim()) {
+                e.preventDefault();
+                searchInput.focus();
+            }
+        });
+    }
+});
+
+async function loadCommunityStats() {
+    try {
+        const response = await fetch('/api/community-stats');
+        const data = await response.json();
+        
+        if (data.success) {
+            const stats = data.stats;
+            
+            document.getElementById('total-insights').textContent = formatNumber(stats.total_insights);
+            document.getElementById('total-likes').textContent = formatNumber(stats.total_likes);
+            document.getElementById('total-authors').textContent = formatNumber(stats.total_authors);
+        }
+    } catch (error) {
+        console.error('Failed to load community stats:', error);
+        // Set default values on error
+        document.getElementById('total-insights').textContent = '--';
+        document.getElementById('total-likes').textContent = '--';
+        document.getElementById('total-authors').textContent = '--';
+    }
+}
+
+async function loadTrendingTopics() {
+    try {
+        const response = await fetch('/api/trending-topics');
+        const data = await response.json();
+        
+        if (data.success && data.topics.length > 0) {
+            const container = document.getElementById('trending-topics-container');
+            
+            container.innerHTML = data.topics.map(topic => `
+                <div class="trending-topic-item">
+                    <a href="{{ url_for('main.community_search') }}?q=${encodeURIComponent(topic.topic)}" 
+                       class="text-decoration-none">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="topic-name">${escapeHtml(topic.topic)}</span>
+                            <span class="badge bg-secondary">${topic.count}</span>
+                        </div>
+                    </a>
+                </div>
+            `).join('');
+        } else {
+            document.getElementById('trending-topics-container').innerHTML = `
+                <div class="text-muted text-center py-2">
+                    <small>No trending topics yet</small>
+                </div>
+            `;
+        }
+    } catch (error) {
+        console.error('Failed to load trending topics:', error);
+        document.getElementById('trending-topics-container').innerHTML = `
+            <div class="text-muted text-center py-2">
+                <small>Failed to load topics</small>
+            </div>
+        `;
+    }
+}
+
+async function togglePin(insightId, buttonElement) {
+    const isPinned = buttonElement.dataset.pinned === 'true';
+    const newPinnedState = !isPinned;
+    
+    try {
+        const response = await fetch(`/api/insights/${insightId}/pin`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ is_pinned: newPinnedState })
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            
+            // Update button state
+            buttonElement.dataset.pinned = newPinnedState.toString();
+            buttonElement.title = `${newPinnedState ? 'Unpin' : 'Pin'} this insight`;
+            
+            // Update card appearance
+            const card = buttonElement.closest('.insight-preview-card');
+            if (newPinnedState) {
+                card.classList.add('pinned');
+                // Add pin badge if it doesn't exist
+                if (!card.querySelector('.pin-badge')) {
+                    const pinBadge = document.createElement('div');
+                    pinBadge.className = 'pin-badge';
+                    pinBadge.innerHTML = '<i class="fas fa-thumbtack"></i> Pinned';
+                    card.insertBefore(pinBadge, card.firstChild);
+                }
+            } else {
+                card.classList.remove('pinned');
+                // Remove pin badge
+                const pinBadge = card.querySelector('.pin-badge');
+                if (pinBadge) {
+                    pinBadge.remove();
+                }
+            }
+            
+            showToast(data.message, 'success');
+            
+        } else {
+            const error = await response.json();
+            showToast(error.error || 'Failed to update pin status', 'error');
+        }
+        
+    } catch (error) {
+        console.error('Pin toggle error:', error);
+        showToast('Failed to update pin status', 'error');
+    }
+}
+
+// Enhanced like toggle for community page
+async function toggleLike(insightId, buttonElement) {
+    try {
+        const response = await fetch(`/api/insights/${insightId}/like`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            
+            // Update the like count
+            const likeCountSpan = buttonElement.querySelector('.like-count');
+            likeCountSpan.textContent = data.likes;
+            
+            // Update button appearance based on liked status
+            if (data.liked) {
+                buttonElement.classList.remove('btn-outline-danger');
+                buttonElement.classList.add('btn-danger');
+                buttonElement.dataset.liked = 'true';
+            } else {
+                buttonElement.classList.remove('btn-danger');
+                buttonElement.classList.add('btn-outline-danger');
+                buttonElement.dataset.liked = 'false';
+            }
+            
+            // Add a nice animation
+            buttonElement.style.transform = 'scale(1.1)';
+            setTimeout(() => {
+                buttonElement.style.transform = 'scale(1)';
+            }, 150);
+            
+        } else {
+            const error = await response.json();
+            console.error('Like toggle failed:', error);
+            showToast('Failed to update like. Please try again.', 'error');
+        }
+        
+    } catch (error) {
+        console.error('Like toggle error:', error);
+        showToast('Failed to update like. Please try again.', 'error');
+    }
+}
+
+// Utility functions
+function formatNumber(num) {
+    if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+    if (num >= 1000) return (num / 1000).toFixed(1) + 'k';
+    return num.toString();
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function showToast(message, type = 'info') {
+    const toast = document.createElement('div');
+    toast.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    toast.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        if (toast.parentNode) {
+            toast.parentNode.removeChild(toast);
+        }
+    }, 3000);
+}
+</script>
+
+<style>
+.community-page {
+    min-height: 100vh;
+}
+
+.community-header {
+    margin-bottom: 2rem;
+}
+
+.community-stats {
+    display: flex;
+    gap: 2rem;
+}
+
+.stat-item {
+    text-align: center;
+}
+
+.stat-number {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--primary-color);
+}
+
+.stat-label {
+    font-size: 0.875rem;
+    color: #6c757d;
+    font-weight: 500;
+}
+
+.filter-bar {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 15px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.search-form .input-group {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.insights-grid {
+    min-height: 400px;
+}
+
+.insight-preview-card {
+    background: white;
+    border: 1px solid #e9ecef;
+    border-radius: 15px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    position: relative;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.insight-preview-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+    border-color: var(--primary-color);
+}
+
+.insight-preview-card.pinned {
+    border-color: #ffc107;
+    background: linear-gradient(135deg, #fff9e1 0%, #ffffff 100%);
+}
+
+.pin-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: #ffc107;
+    color: #000;
+    padding: 4px 8px;
+    border-radius: 15px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    z-index: 1;
+}
+
+.insight-preview-card .card-header {
+    background: none;
+    border-bottom: 1px solid #f8f9fa;
+    padding: 1.25rem;
+}
+
+.insight-title a {
+    color: #2d3748;
+    font-weight: 600;
+    font-size: 1.1rem;
+    line-height: 1.3;
+}
+
+.insight-title a:hover {
+    color: var(--primary-color);
+}
+
+.insight-meta {
+    margin-top: 0.5rem;
+}
+
+.insight-preview-card .card-body {
+    padding: 1rem 1.25rem;
+    flex-grow: 1;
+}
+
+.insight-preview {
+    color: #6c757d;
+    line-height: 1.5;
+    margin-bottom: 1rem;
+}
+
+.insight-stats {
+    margin-bottom: 0.5rem;
+}
+
+.insight-preview-card .card-footer {
+    background: #f8f9fa;
+    border-top: 1px solid #e9ecef;
+    padding: 1rem 1.25rem;
+}
+
+.like-btn {
+    transition: all 0.2s ease;
+}
+
+.like-btn:hover {
+    transform: scale(1.05);
+}
+
+.pin-btn {
+    transition: all 0.2s ease;
+}
+
+.pin-btn:hover {
+    transform: scale(1.05);
+}
+
+.sidebar-content {
+    position: sticky;
+    top: 2rem;
+}
+
+.sidebar-card {
+    background: white;
+    border: 1px solid #e9ecef;
+    border-radius: 15px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.sidebar-title {
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: #2d3748;
+}
+
+.trending-topic-item {
+    padding: 0.75rem 0;
+    border-bottom: 1px solid #f1f3f4;
+}
+
+.trending-topic-item:last-child {
+    border-bottom: none;
+}
+
+.trending-topic-item:hover {
+    background: rgba(102, 126, 234, 0.05);
+    border-radius: 5px;
+    margin: 0 -0.5rem;
+    padding: 0.75rem 0.5rem;
+}
+
+.topic-name {
+    color: #495057;
+    font-weight: 500;
+}
+
+.guideline-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.guideline-list li {
+    padding: 0.5rem 0;
+    color: #6c757d;
+    font-size: 0.9rem;
+    position: relative;
+    padding-left: 1.5rem;
+}
+
+.guideline-list li::before {
+    content: '•';
+    color: var(--primary-color);
+    font-weight: 600;
+    position: absolute;
+    left: 0;
+}
+
+.empty-state {
+    background: white;
+    border-radius: 15px;
+    padding: 3rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.active-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.pagination .page-link {
+    border-radius: 8px;
+    margin: 0 2px;
+    border: 1px solid #dee2e6;
+    color: var(--primary-color);
+}
+
+.pagination .page-item.active .page-link {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+@media (max-width: 768px) {
+    .community-stats {
+        display: none;
+    }
+    
+    .filter-bar .row {
+        flex-direction: column;
+    }
+    
+    .filter-bar .col-md-6:first-child {
+        margin-bottom: 1rem;
+    }
+    
+    .btn-group {
+        width: 100%;
+    }
+    
+    .btn-group .btn {
+        flex: 1;
+    }
+}
+
+@media (max-width: 576px) {
+    .insight-preview-card .card-footer {
+        padding: 0.75rem;
+    }
+    
+    .insight-preview-card .card-footer .btn {
+        font-size: 0.8rem;
+        padding: 0.375rem 0.5rem;
+    }
+}
+</style>
+{% endblock %}
