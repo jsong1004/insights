@@ -119,6 +119,102 @@
         border-color: #6366f1;
     }
     
+    /* Insights Context Styling */
+    .insights-context-row {
+        background: #f8fafc;
+    }
+    
+    .insights-context-cell {
+        padding: 0 !important;
+        border-top: none !important;
+    }
+    
+    .insights-context {
+        background: #f8fafc;
+        border-radius: 0;
+        padding: 16px 20px;
+        margin: 0;
+        border-left: 4px solid #6366f1;
+        border-top: 1px solid #e2e8f0;
+    }
+    
+    .insight-item {
+        padding: 12px 0;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    
+    .insight-item:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+        padding-bottom: 0;
+    }
+    
+    .insight-title {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        font-size: 0.95rem;
+        margin-bottom: 6px;
+    }
+    
+    .confidence-badge {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        padding: 3px 8px;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+    
+    .insight-summary {
+        font-size: 0.85rem;
+        line-height: 1.5;
+        color: #64748b;
+        margin-left: 24px;
+    }
+    
+    /* Table row spacing adjustment */
+    .table td {
+        vertical-align: top;
+        padding: 1rem 0.75rem;
+    }
+    
+    /* Hover effect for insight rows */
+    .table tbody tr:hover {
+        background-color: #f8fafc;
+    }
+    
+    .insights-context-row:hover {
+        background-color: #f1f5f9 !important;
+    }
+    
+    /* Toggle button styling */
+    .toggle-insights-btn {
+        font-size: 0.8rem;
+        padding: 0.25rem 0.5rem;
+        border-radius: 6px;
+        transition: all 0.2s ease;
+    }
+    
+    .toggle-insights-btn:hover {
+        transform: translateY(-1px);
+    }
+    
+    .toggle-insights-btn i {
+        transition: transform 0.2s ease;
+    }
+    
+    .toggle-insights-btn.expanded i {
+        transform: rotate(180deg);
+    }
+    
+    /* Animation for insights context */
+    .insights-context-row {
+        transition: all 0.3s ease;
+    }
+    
     @media (max-width: 768px) {
         .community-title {
             font-size: 2rem;
@@ -126,6 +222,19 @@
         
         .filter-tabs {
             justify-content: center;
+        }
+        
+        .insight-title {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        
+        .confidence-badge {
+            margin-left: 0;
+        }
+        
+        .insight-summary {
+            margin-left: 0;
         }
     }
 </style>
@@ -141,7 +250,12 @@
                     <i class="fas fa-users me-3"></i>Community Insights
                 </h1>
                 <p class="community-subtitle">
-                    Discover and share AI-powered insights with the community
+                    Explore and contribute AI-driven insights to our growing community. 
+                </p>
+                <p class="community-description mt-3" style="font-size: 1rem; opacity: 0.85; max-width: 600px; margin: 1rem auto 0;">
+                    <i class="fas fa-heart me-2 text-danger"></i>
+                    
+                    Your likes help surface the best content and strengthen our shared learning experience.
                 </p>
             </div>
         </div>
@@ -197,6 +311,17 @@
                                                 <a href="{{ url_for('main.view_insights', insight_id=insight.id) }}" class="text-decoration-none">
                                                     <div class="fw-semibold text-primary">{{ insight.topic }}</div>
                                                 </a>
+                                                {% if insight.insights %}
+                                                <div class="mt-2">
+                                                    <button class="btn btn-sm btn-outline-info toggle-insights-btn" 
+                                                            onclick="toggleInsights('{{ insight.id }}')"
+                                                            data-insight-id="{{ insight.id }}">
+                                                        <i class="fas fa-chevron-down me-1"></i>
+                                                        <span class="toggle-text">Show Details</span>
+                                                        <span class="badge bg-secondary ms-1">{{ insight.insights|length }}</span>
+                                                    </button>
+                                                </div>
+                                                {% endif %}
                                             </td>
                                             <td>
                                                 <div>{{ insight.author_name or 'Anonymous' }}</div>
@@ -223,6 +348,29 @@
                                                 {% endif %}
                                             </td>
                                         </tr>
+                                        <!-- Insights Context Row -->
+                                        {% if insight.insights %}
+                                        <tr class="insights-context-row" id="insights-{{ insight.id }}" style="display: none;">
+                                            <td colspan="4" class="insights-context-cell">
+                                                <div class="insights-context">
+                                                    {% for item in insight.insights[:3] %}
+                                                    <div class="insight-item mb-2">
+                                                        <div class="insight-title">
+                                                            <i class="fas fa-lightbulb me-1 text-warning"></i>
+                                                            <strong>{{ item.title }}</strong>
+                                                            <span class="confidence-badge ms-2">
+                                                                {{ (item.confidence_score * 100) | round(0) | int }}% Confidence
+                                                            </span>
+                                                        </div>
+                                                        <div class="insight-summary text-muted small mt-1">
+                                                            {{ item.summary[:150] }}{% if item.summary|length > 150 %}...{% endif %}
+                                                        </div>
+                                                    </div>
+                                                    {% endfor %}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        {% endif %}
                                         {% endfor %}
                                     {% else %}
                                         <!-- Empty State -->
@@ -296,6 +444,30 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 });
+
+// Toggle insights details
+function toggleInsights(insightId) {
+    const insightsRow = document.getElementById('insights-' + insightId);
+    const toggleBtn = document.querySelector(`[data-insight-id="${insightId}"].toggle-insights-btn`);
+    const toggleText = toggleBtn.querySelector('.toggle-text');
+    const chevronIcon = toggleBtn.querySelector('i');
+    
+    if (insightsRow.style.display === 'none' || !insightsRow.style.display) {
+        // Show insights
+        insightsRow.style.display = 'table-row';
+        toggleText.textContent = 'Hide Details';
+        toggleBtn.classList.add('expanded');
+        chevronIcon.classList.remove('fa-chevron-down');
+        chevronIcon.classList.add('fa-chevron-up');
+    } else {
+        // Hide insights
+        insightsRow.style.display = 'none';
+        toggleText.textContent = 'Show Details';
+        toggleBtn.classList.remove('expanded');
+        chevronIcon.classList.remove('fa-chevron-up');
+        chevronIcon.classList.add('fa-chevron-down');
+    }
+}
 
 // Keyboard shortcuts
 document.addEventListener('keydown', function(e) {
