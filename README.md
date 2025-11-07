@@ -2,7 +2,7 @@
 
 A powerful social web application that uses CrewAI's multi-agent system to generate intelligent insights on any topic. Users can sign up, log in, and share insights with the community while building their personal research library. Features comprehensive usage statistics tracking, automated session timeout management, plan-based subscription limits, and an interactive community platform with toggleable insight details.
 
-**Latest Update (January 2025)**: Now featuring an enhanced Community page with toggleable insight details, full-width insight display across all table columns, improved navigation consistency across all templates, comprehensive usage statistics tracking with multi-tier subscription plans, automated 15-minute session timeout management, advanced search parameters with source type filtering (General, News, Finance & Business) and time range controls, enhanced error handling for search tool compatibility, robust fallback mechanisms, and a health check endpoint for monitoring. **NEW**: Interactive Community page with expandable insight details, confidence scoring display, and space-efficient design for better user experience. Running on Flask 3.1.1 with CrewAI 0.134.0 for enhanced performance, user management, and collaborative insights.
+**Latest Update (November 2025)**: Production-ready Flask web application featuring comprehensive social features, advanced search capabilities, and enterprise-grade infrastructure. Now includes interactive Community platform with expandable insight details, multi-tier subscription management with real-time usage tracking, automated session security with 15-minute timeout, and Docker containerization for cloud deployment. Built on Flask 3.1.1 with CrewAI 0.134.0 multi-agent AI system, Firebase Authentication, and Google Cloud integration for scalable, secure AI insights generation.
 
 ## ✨ Features
 
@@ -179,7 +179,7 @@ python app.py
 export DYLD_LIBRARY_PATH="/opt/homebrew/lib:$DYLD_LIBRARY_PATH"
 ```
 
-See `PDF_EXPORT_SETUP.md` for detailed instructions and troubleshooting.
+For detailed PDF setup troubleshooting, refer to the WeasyPrint documentation or the installation guide above.
 
 ### 5. Run the Application
 
@@ -197,20 +197,28 @@ flask run --debug --port 5001
 gunicorn -w 4 -b 0.0.0.0:5001 app:app
 ```
 
-Visit `http://localhost:5001` to access the application.
+Visit `http://localhost:5001` (Flask direct) or `http://localhost:5000` (Docker) to access the application.
 
 ### 6. Docker Deployment (Production Ready)
 
 ```bash
-# Build the Docker image
+# Build the Docker image with multi-stage build
 docker build --platform linux/amd64 -f Dockerfile.insight -t ai-insights-app .
 
-# Run locally with Docker
-docker-compose -f docker-compose.insight.yml up
+# Run locally with Docker Compose (recommended for local testing)
+docker-compose -f docker-compose.insight.yml up -d
 
-# Deploy to Google Cloud Run
+# View container logs
+docker-compose -f docker-compose.insight.yml logs -f
+
+# Stop and remove containers
+docker-compose -f docker-compose.insight.yml down
+
+# Deploy to Google Cloud Run (production)
 ./build-insight-app.sh
 ```
+
+The application will be available at `http://localhost:5000` when running with Docker.
 
 ### 6. PDF Export (WeasyPrint Dependencies)
 
@@ -275,7 +283,7 @@ After the system libraries are installed, reinstall Python dependencies (or run 
 - **Delete Content**: Only you can delete your own insights
 - **Download Reports**: Generate HTML reports with improved styling
 
-## 🏗️ Architecture (Updated January 2025)
+## 🏗️ Architecture (Updated November 2025)
 
 ### Frontend
 - **Bootstrap 5.3**: Latest responsive UI framework with new components
@@ -494,9 +502,14 @@ The application uses Firebase for secure user authentication:
 ## 🐳 Docker Deployment
 
 ### Local Development with Docker
+
+**Quick Start:**
 ```bash
 # Build and run with Docker Compose
 docker-compose -f docker-compose.insight.yml up --build
+
+# Run in detached mode (background)
+docker-compose -f docker-compose.insight.yml up -d
 
 # View logs
 docker-compose -f docker-compose.insight.yml logs -f
@@ -505,26 +518,57 @@ docker-compose -f docker-compose.insight.yml logs -f
 docker-compose -f docker-compose.insight.yml down
 ```
 
-### Production Deployment to Google Cloud Run
+**Rebuild After Code Changes:**
 ```bash
-# Run the deployment script
-chmod +x build-insight-app.sh
-./build-insight-app.sh
-
-# Or deploy manually
-gcloud run deploy ai-insights-app \
-  --source . \
-  --platform managed \
-  --region us-central1 \
-  --allow-unauthenticated
+# Rebuild with no cache (ensures fresh build)
+docker-compose -f docker-compose.insight.yml build --no-cache
+docker-compose -f docker-compose.insight.yml up -d
 ```
 
-### Docker Configuration
-- **Multi-stage builds**: Optimized image size and build time
-- **Security**: Non-root user and minimal attack surface
-- **Environment variables**: Flexible configuration for different environments
-- **Health checks**: Built-in health monitoring
-- **Port configuration**: Automatic port detection for Cloud Run
+The application will be available at `http://localhost:5000`.
+
+### Production Deployment to Google Cloud Run
+
+**Automated Deployment (Recommended):**
+```bash
+# Run the complete deployment script
+chmod +x build-insight-app.sh
+./build-insight-app.sh
+```
+
+The script automatically handles:
+- Service account creation and IAM permissions
+- API enablement (Firebase, Firestore, Identity Toolkit)
+- Docker image building with multi-stage optimization
+- Container Registry push
+- Cloud Run service deployment with auto-scaling
+
+**Manual Deployment:**
+```bash
+# Build Docker image
+docker build --platform linux/amd64 -f Dockerfile.insight -t gcr.io/[PROJECT_ID]/ai-insights-app .
+
+# Push to Google Container Registry
+docker push gcr.io/[PROJECT_ID]/ai-insights-app
+
+# Deploy to Cloud Run
+gcloud run deploy ai-insights-app \
+  --image gcr.io/[PROJECT_ID]/ai-insights-app \
+  --platform managed \
+  --region us-central1 \
+  --allow-unauthenticated \
+  --memory 2Gi \
+  --timeout 300
+```
+
+### Docker Configuration Features
+- **Multi-stage builds**: Frontend (Node.js + Vite) → Backend (Python + Flask) for optimized image size
+- **Production server**: Gunicorn with 4 workers for concurrent request handling
+- **Security**: Non-root user, minimal attack surface, secure credential handling
+- **Environment variables**: Flexible configuration for dev/staging/production environments
+- **Health checks**: Built-in `/status` endpoint for monitoring and auto-healing
+- **Port configuration**: Automatic port detection for Cloud Run (PORT environment variable)
+- **Secret management**: Google Cloud Secret Manager integration for sensitive credentials
 
 ## 🧪 Testing (Comprehensive 2025 Suite)
 
@@ -632,7 +676,7 @@ All features have been thoroughly tested:
 - [x] Responsive table design on all screen sizes
 - [x] User-specific data filtering (author_id based)
 
-## 🆘 Troubleshooting (Updated January 2025)
+## 🆘 Troubleshooting (Updated November 2025)
 
 ### Common Issues
 
@@ -760,4 +804,4 @@ All features have been thoroughly tested:
 
 **Powered by Firebase Authentication, CrewAI 0.134.0 Multi-Agent System, Flask 3.1.1 & Docker** 🔐🤖✨🐳
 
-*Last Updated: June 29 2025 - Now featuring an enhanced Community platform with toggleable insight details, full-width display, confidence scoring, consistent navigation across all templates, advanced search parameters with source type filtering (General, News, Finance & Business) and time range controls, enhanced search tool error handling with robust fallback mechanisms, health monitoring endpoint, interactive My Insights table with sortable columns for better insights management, and production-ready infrastructure for collaborative AI insights generation.* 
+*Last Updated: November 7, 2025 - Production-ready web application with comprehensive social features, multi-tier subscription management, interactive Community platform with expandable insight details, advanced search parameters, Docker containerization, and enterprise-grade infrastructure. Powered by Flask 3.1.1, CrewAI 0.134.0, Firebase Authentication, and Google Cloud Platform for scalable AI insights generation.* 
