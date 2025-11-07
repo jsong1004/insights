@@ -57,6 +57,30 @@ def create_app():
     app.register_blueprint(main_bp)
     app.register_blueprint(api_bp)
 
+    # Set up Vite helper for asset management
+    try:
+        from vite_helper import setup_vite_helper, get_vite_asset
+        setup_vite_helper(app)
+        app.jinja_env.globals['get_vite_asset'] = get_vite_asset
+        logging.info("✅ Vite asset helper initialized")
+    except ImportError:
+        logging.warning("❌ Vite helper not available")
+
+    # Admin context processor
+    @app.context_processor
+    def inject_admin_status():
+        """Inject admin status into all templates"""
+        user_id = session.get('user_id')
+        is_admin = False
+        if user_id:
+            try:
+                firestore_manager = app.extensions.get('firestore_manager')
+                if firestore_manager:
+                    is_admin = firestore_manager.is_user_admin(user_id)
+            except Exception as e:
+                logging.warning(f"Error checking admin status: {e}")
+        return dict(is_admin=is_admin)
+
     @app.before_request
     def before_request():
         session.permanent = True

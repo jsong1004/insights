@@ -319,3 +319,70 @@ def get_activity_report():
             'success': False,
             'error': 'Failed to retrieve activity report'
         }), 500
+
+@api_bp.route('/insights/<insight_id>/pin', methods=['POST'])
+@login_required
+def pin_insight(insight_id):
+    """Pin or unpin an insight (admin only)"""
+    try:
+        user_id = session.get('user_id')
+        if not user_id:
+            return jsonify({'error': 'Authentication required'}), 401
+
+        # Check if user is admin
+        firestore_manager = current_app.extensions.get('firestore_manager')
+        if not firestore_manager.is_user_admin(user_id):
+            return jsonify({'error': 'Admin privileges required'}), 403
+
+        # Get pin status from request
+        data = request.get_json()
+        is_pinned = data.get('is_pinned', True)
+
+        # Update pin status
+        success = insights_manager.update_pin_status(insight_id, is_pinned, user_id)
+
+        if success:
+            return jsonify({
+                'success': True,
+                'is_pinned': is_pinned,
+                'message': f"Insight {'pinned' if is_pinned else 'unpinned'} successfully"
+            })
+        else:
+            return jsonify({'error': 'Failed to update pin status'}), 500
+
+    except Exception as e:
+        logger.error(f"Error in pin_insight: {str(e)}")
+        return jsonify({'error': 'An error occurred while updating pin status'}), 500
+
+@api_bp.route('/community-stats')
+def get_community_stats():
+    """Get community statistics"""
+    try:
+        stats = insights_manager.get_community_stats()
+
+        return jsonify({
+            'success': True,
+            'stats': stats
+        })
+
+    except Exception as e:
+        logger.error(f"Error getting community stats: {e}")
+        return jsonify({'error': 'Failed to retrieve community statistics'}), 500
+
+@api_bp.route('/trending-topics')
+def get_trending_topics():
+    """Get trending topics"""
+    try:
+        limit = request.args.get('limit', 10, type=int)
+        limit = min(limit, 20)  # Cap at 20
+
+        topics = insights_manager.get_trending_topics(limit=limit)
+
+        return jsonify({
+            'success': True,
+            'topics': topics
+        })
+
+    except Exception as e:
+        logger.error(f"Error getting trending topics: {e}")
+        return jsonify({'error': 'Failed to retrieve trending topics'}), 500

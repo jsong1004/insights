@@ -1,11 +1,27 @@
+import logging
+import os
+from io import BytesIO
+
 from flask import Blueprint, render_template, request, jsonify, redirect, url_for, flash, make_response, session, current_app
+
 from core.crew_ai import AIInsightsCrew
 from core.insights_manager import FirestoreManager
 from auth.firebase_auth import login_required
-import os
-import logging
 
 logger = logging.getLogger(__name__)
+
+try:
+    from weasyprint import HTML  # type: ignore
+    WEASYPRINT_AVAILABLE = True
+except (OSError, ImportError) as weasy_error:
+    HTML = None  # type: ignore
+    WEASYPRINT_AVAILABLE = False
+    logger.warning(
+        "WeasyPrint PDF rendering disabled: %s. "
+        "Install the required system libraries (see README) to enable PDF downloads.",
+        weasy_error,
+    )
+
 main_bp = Blueprint('main', __name__)
 
 insights_firestore_manager = FirestoreManager()
@@ -189,46 +205,75 @@ def delete_insights(insight_id):
 @main_bp.route('/download/<insight_id>')
 @login_required
 def download_insights(insight_id):
-    """Download insights as formatted HTML file"""
+    """Download insights as formatted HTML or PDF file"""
+    format_type = request.args.get('format', 'html').lower()
+    
     insights = insights_firestore_manager.get_insights(insight_id)
     if not insights:
         flash('Insights not found.', 'error')
         return redirect(url_for('main.index'))
     
     html_content = render_template('download_report.html', insights=insights)
-    response = make_response(html_content)
-    response.headers['Content-Type'] = 'text/html; charset=utf-8'
-    response.headers['Content-Disposition'] = f'attachment; filename="insights_{insight_id}.html"'
     
-    return response
+    if format_type == 'pdf':
+        if not WEASYPRINT_AVAILABLE:
+            flash('PDF downloads require additional WeasyPrint system libraries. Please install them (see README) or download HTML instead.', 'error')
+            logger.warning("PDF download requested but WeasyPrint dependencies are missing.")
+            return redirect(url_for('main.view_insight', insight_id=insight_id))
+        try:
+            # Generate PDF from HTML
+            pdf_buffer = BytesIO()
+            HTML(string=html_content).write_pdf(pdf_buffer)
+            pdf_buffer.seek(0)
+            
+            response = make_response(pdf_buffer.read())
+            response.headers['Content-Type'] = 'application/pdf'
+            response.headers['Content-Disposition'] = f'attachment; filename="insights_{insight_id}.pdf"'
+            
+            return response
+        except Exception as e:
+            logger.error(f"Error generating PDF: {e}")
+            flash('Error generating PDF. Please try downloading as HTML instead.', 'error')
+            return redirect(url_for('main.view_insight', insight_id=insight_id))
+    else:
+        # Default HTML format
+        response = make_response(html_content)
+        response.headers['Content-Type'] = 'text/html; charset=utf-8'
+        response.headers['Content-Disposition'] = f'attachment; filename="insights_{insight_id}.html"'
+        
+        return response
 
 @main_bp.route('/community')
 def community():
-    """Community page showing shared insights with modern social features"""
-    sort_by = request.args.get('sort', 'recent')  # recent, trending, most_liked, featured
+    """Community page showing shared insights with modern social features and search"""
+    sort_by = request.args.get('sort', 'recent')  # recent, trending, most_liked, pinned
+    search_query = request.args.get('q', '').strip()
     page = request.args.get('page', 1, type=int)
-    per_page = 10
-    
+    per_page = 12
+
     try:
-        # Get insights based on sort type
-        if sort_by == 'trending':
-            insights_list = insights_firestore_manager.get_trending_insights(limit=per_page * 5)
-        elif sort_by == 'most_liked':
-            insights_list = insights_firestore_manager.get_most_liked_insights(limit=per_page * 5)
-        elif sort_by == 'featured':
-            insights_list = insights_firestore_manager.get_featured_insights(limit=per_page * 5)
-        else:  # recent
-            insights_list = insights_firestore_manager.get_shared_insights()
-        
-        # Simple pagination
-        total_insights = len(insights_list)
-        start_idx = (page - 1) * per_page
-        end_idx = start_idx + per_page
-        paginated_insights = insights_list[start_idx:end_idx]
-        
+        # Check if searching
+        if search_query:
+            insights_list = insights_firestore_manager.search_community_insights(
+                search_query, sort_by=sort_by, page=page, per_page=per_page
+            )
+            total_insights = insights_firestore_manager.get_search_results_count(search_query)
+        else:
+            # Use new community insights method with pagination
+            insights_list = insights_firestore_manager.get_community_insights(
+                sort_by=sort_by, page=page, per_page=per_page
+            )
+            total_insights = insights_firestore_manager.get_community_insights_count()
+
+        # Get community stats
+        community_stats = insights_firestore_manager.get_community_stats()
+
+        # Get trending topics for sidebar
+        trending_topics = insights_firestore_manager.get_trending_topics(limit=10)
+
         # Create pagination object
         total_pages = (total_insights + per_page - 1) // per_page if total_insights > 0 else 1
-        
+
         class SimplePagination:
             def __init__(self, page, per_page, total, items):
                 self.page = page
@@ -240,7 +285,7 @@ def community():
                 self.prev_num = page - 1 if self.has_prev else None
                 self.next_num = page + 1 if self.has_next else None
                 self.items = items
-            
+
             def iter_pages(self, left_edge=2, left_current=2, right_current=3, right_edge=2):
                 last = self.pages
                 for num in range(1, last + 1):
@@ -248,14 +293,17 @@ def community():
                        (self.page - left_current - 1 < num < self.page + right_current) or \
                        num > last - right_edge:
                         yield num
-        
-        pagination = SimplePagination(page, per_page, total_insights, paginated_insights)
-        
-        return render_template('community.html', 
-                             insights=paginated_insights,
+
+        pagination = SimplePagination(page, per_page, total_insights, insights_list)
+
+        return render_template('community.html',
+                             insights=insights_list,
                              sort_by=sort_by,
-                             pagination=pagination)
-        
+                             search_query=search_query,
+                             pagination=pagination,
+                             community_stats=community_stats,
+                             trending_topics=trending_topics)
+
     except Exception as e:
         logger.error(f"Error loading community page: {e}")
         flash('Failed to load community insights. Please try again.', 'error')

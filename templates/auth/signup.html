@@ -54,10 +54,11 @@
     </div>
 </div>
 
-<!-- Firebase SDK -->
+{% endblock %}
+
+{% block firebase_scripts %}
 <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-auth-compat.js"></script>
-
 <script>
 // Firebase configuration for ai-biz-6b7ec project
 const firebaseConfig = {
@@ -70,9 +71,16 @@ const firebaseConfig = {
     measurementId: "G-XB962NM878"
 };
 
-// Initialize Firebase
-firebase.initializeApp(firebaseConfig);
+// Initialize Firebase (check if not already initialized)
+if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+}
 const auth = firebase.auth();
+</script>
+{% endblock %}
+
+{% block scripts %}
+<script>
 
 // Helper function to show messages
 function showMessage(elementId, message, isError = true) {

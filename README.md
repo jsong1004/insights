@@ -1,12 +1,22 @@
 # 🧠 AI Insights Generator - Flask Web App
 
-A powerful social web application that uses CrewAI's multi-agent system to generate intelligent insights on any topic. Users can sign up, log in, and share insights with the community while building their personal research library. Features comprehensive usage statistics tracking, automated session timeout management, and plan-based subscription limits.
+A powerful social web application that uses CrewAI's multi-agent system to generate intelligent insights on any topic. Users can sign up, log in, and share insights with the community while building their personal research library. Features comprehensive usage statistics tracking, automated session timeout management, plan-based subscription limits, and an interactive community platform with toggleable insight details.
 
-**Latest Update (June 2025)**: Now featuring comprehensive usage statistics tracking with multi-tier subscription plans, automated 15-minute session timeout management, advanced search parameters with source type filtering (General, News, Finance & Business) and time range controls (None, Day, Week, Month, Year), enhanced error handling for search tool compatibility, robust fallback mechanisms, and a health check endpoint for monitoring. **NEW**: Interactive My Insights table with sortable columns (Title, Tokens, Date) replacing Recent Activity for better insights management. Running on Flask 3.1.1 with CrewAI 0.134.0 for enhanced performance, user management, and collaborative insights.
+**Latest Update (January 2025)**: Now featuring an enhanced Community page with toggleable insight details, full-width insight display across all table columns, improved navigation consistency across all templates, comprehensive usage statistics tracking with multi-tier subscription plans, automated 15-minute session timeout management, advanced search parameters with source type filtering (General, News, Finance & Business) and time range controls, enhanced error handling for search tool compatibility, robust fallback mechanisms, and a health check endpoint for monitoring. **NEW**: Interactive Community page with expandable insight details, confidence scoring display, and space-efficient design for better user experience. Running on Flask 3.1.1 with CrewAI 0.134.0 for enhanced performance, user management, and collaborative insights.
 
 ## ✨ Features
 
-### 🔍 Advanced Search Parameters (NEW)
+### 🌟 Enhanced Community Platform (NEW)
+- **Interactive Community Page**: Browse shared insights with expandable details for space-efficient viewing
+- **Toggleable Insight Details**: Click "Show Details" to expand full insight context with confidence scores
+- **Full-Width Display**: Insight details span all table columns for maximum readability
+- **Confidence Scoring**: Each insight displays confidence percentages (e.g., "90% Confidence")
+- **Smart Previews**: Truncated summaries with full context available on demand
+- **Badge Indicators**: Shows number of available insights per topic
+- **Animated Interactions**: Smooth expand/collapse with rotating chevron icons
+- **Community Engagement**: Encouraging messages to build a collaborative learning environment
+
+### 🔍 Advanced Search Parameters
 - **Source Type Selection**: Choose between General Web Search, News Articles, or Finance & Business sources
 - **Time Range Filtering**: Filter results by recency (None, Past Day, Past Week, Past Month, Past Year)
 - **Intelligent Search Guidance**: AI agents receive specific instructions based on your search preferences
@@ -18,16 +28,18 @@ A powerful social web application that uses CrewAI's multi-agent system to gener
 - **Session Management**: Persistent login sessions with automatic token refresh and 15-minute timeout
 - **User Dashboard**: Account information, usage statistics, and subscription management
 - **Protected Routes**: Secure access to insight generation and personal data
-- **Clean Auth Pages**: Dedicated authentication layouts without distracting sidebars
+- **Consistent Navigation**: Community link available across all pages including Generate Insights and Dashboard
+- **Clean Auth Pages**: Dedicated authentication layouts with proper navigation
 - **Automated Session Timeout**: Dual-layer session management with inactivity-based expiration
 
 ### 🌟 Social Features & Community
 - **Public Sharing**: Insights are shared publicly by default (opt-out system)
-- **Like System**: Users can like insights with real-time heart button interactions
+- **One-Time Like System**: Users can like insights once with disabled state after liking
 - **Author Attribution**: All insights display author name and email for credibility
 - **Privacy Controls**: Authors can toggle sharing status on their own insights
-- **Community Feed**: Browse and discover insights from other users
-- **User Profiles**: View insights by specific authors
+- **Community Feed**: Browse and discover insights with sorting options (Recent, Trending, Most Liked, Featured)
+- **Interactive Filters**: Easy navigation between different insight categories
+- **Engagement Messaging**: Clear guidance on how likes help surface quality content
 
 ### 🤖 Multi-Agent AI System (CrewAI 0.134.0)
 - **Research Agent**: Finds comprehensive, up-to-date information using advanced search tools with source-specific guidance
@@ -39,9 +51,9 @@ A powerful social web application that uses CrewAI's multi-agent system to gener
 - **Enhanced Loading States**: Interactive buttons with "Generating Insights..." feedback
 - **Real-time Processing**: Live updates during insight generation with progress indicators
 - **Form Protection**: Prevents double submissions and accidental data loss
-- **Authentication-Aware Navigation**: Dynamic navigation based on user login status
+- **Authentication-Aware Navigation**: Dynamic navigation based on user login status with consistent Community access
 - **Responsive Design**: Works seamlessly on desktop, tablet, and mobile devices
-- **Interactive Sidebar**: Browse and manage previous insights with social indicators
+- **Interactive Community Interface**: Expandable insight details with smooth animations
 - **Beautiful UI**: Modern gradient design with smooth animations and accessibility features
 - **Enhanced Security**: Latest Flask security features with Firebase authentication
 
@@ -54,7 +66,7 @@ A powerful social web application that uses CrewAI's multi-agent system to gener
 - **Historical Data**: 30-day rolling usage history with monthly breakdowns
 - **Automated Management**: Monthly reset via Firebase Cloud Functions
 
-### 📋 My Insights Management (NEW)
+### 📋 My Insights Management
 - **Interactive Table**: Sortable table displaying all user's generated insights
 - **Smart Sorting**: Click column headers to sort by Title (alphabetical), Tokens (numerical), or Date (chronological)
 - **Rich Information**: View insight topics, token usage, processing time, and creation dates
@@ -64,11 +76,11 @@ A powerful social web application that uses CrewAI's multi-agent system to gener
 - **Real-time Updates**: Instant table updates when sharing status changes
 
 ### 📊 Intelligent Features
-- **Advanced Confidence Scoring**: Enhanced validation algorithms with detailed metrics
+- **Advanced Confidence Scoring**: Enhanced validation algorithms with detailed metrics displayed in community
 - **Source Attribution**: All claims linked to original sources with quality assessment
 - **Quality Assessment**: Research quality ratings for transparency and reliability
-- **Detailed Analysis**: Comprehensive 500-800 word reports with "Read More" functionality
-- **Smart Previews**: 200-character previews with expandable full content
+- **Detailed Analysis**: Comprehensive 500-800 word reports with expandable content
+- **Smart Previews**: 150-character summaries with full context available on toggle
 - **Processing Metrics**: Token usage, timing and performance information with optimization insights
 
 ### 🔧 User Experience Enhancements
@@ -78,7 +90,7 @@ A powerful social web application that uses CrewAI's multi-agent system to gener
 - **Login-Protected Generation**: Insight creation requires user authentication
 - **Topic Suggestions**: Clickable examples across multiple categories with trending topics
 - **Custom Instructions**: Guide AI agents with specific requirements and constraints
-- **Interactive Content**: Expandable detailed reports with smooth animations
+- **Interactive Content**: Expandable detailed reports with smooth animations and space-efficient design
 - **Insight Management**: Save, view, and delete your own insights with ownership controls
 - **Download Reports**: Export insights as beautifully formatted HTML files with improved styling
 - **Persistent Storage**: ✅ **Firestore integration fully implemented and working**
@@ -146,10 +158,36 @@ For production deployment, ensure the Firebase service account key is available 
 - Local development: `service-account-key.json` file
 - Production: Google Cloud Secret Manager secret named `AI-Biz-Service-Account-Key`
 
-### 4. Run the Application
+### 4. PDF Export Setup (macOS)
+
+PDF downloads require WeasyPrint system libraries. Install via Homebrew:
 
 ```bash
-# Start the Flask development server
+# Install system libraries
+brew install pango gdk-pixbuf libffi
+
+# Start Flask with PDF support
+./run_flask.sh
+
+# Or manually set library paths
+export DYLD_LIBRARY_PATH="/opt/homebrew/lib"
+python app.py
+```
+
+**Permanent setup**: Add to `~/.zshrc`:
+```bash
+export DYLD_LIBRARY_PATH="/opt/homebrew/lib:$DYLD_LIBRARY_PATH"
+```
+
+See `PDF_EXPORT_SETUP.md` for detailed instructions and troubleshooting.
+
+### 5. Run the Application
+
+```bash
+# Start with PDF support (recommended)
+./run_flask.sh
+
+# Or standard Flask development server
 python3 app.py
 
 # Or use Flask command (with latest CLI features)
@@ -161,7 +199,7 @@ gunicorn -w 4 -b 0.0.0.0:5001 app:app
 
 Visit `http://localhost:5001` to access the application.
 
-### 5. Docker Deployment (Production Ready)
+### 6. Docker Deployment (Production Ready)
 
 ```bash
 # Build the Docker image
@@ -173,6 +211,25 @@ docker-compose -f docker-compose.insight.yml up
 # Deploy to Google Cloud Run
 ./build-insight-app.sh
 ```
+
+### 6. PDF Export (WeasyPrint Dependencies)
+
+The `/download/<insight_id>?format=pdf` route uses WeasyPrint, which in turn depends on several native graphics libraries (Pango, Cairo, GDK-PixBuf, libffi, etc.). If those libraries are missing, the server will disable PDF downloads and prompt you to either install the dependencies or download HTML instead.
+
+**macOS (Homebrew):**
+
+```bash
+brew install pango cairo gdk-pixbuf libffi
+```
+
+**Ubuntu / Debian:**
+
+```bash
+sudo apt-get update
+sudo apt-get install -y build-essential libpangocairo-1.0-0 libpangoft2-1.0-0 libcairo2 libgdk-pixbuf2.0-0 libffi-dev
+```
+
+After the system libraries are installed, reinstall Python dependencies (or run `pip install weasyprint --force-reinstall`) inside your virtual environment. Restart the Flask server to re-enable PDF generation.
 
 ## 📱 How to Use
 
@@ -192,17 +249,19 @@ docker-compose -f docker-compose.insight.yml up
 7. **Review Results**: Explore insights with enhanced confidence scores and search parameters used
 8. **Read Detailed Analysis**: Click "Read More" for comprehensive reports
 
-### 3. Enhanced User Experience
-- **Loading Feedback**: Button shows "Generating Insights..." with spinning icon
-- **Form Protection**: Prevents accidental double submissions
-- **Progress Updates**: Flash messages keep you informed during processing
-- **Error Prevention**: Client-side validation prevents common mistakes
-- **Topic Suggestions**: Click example topics to auto-fill the form
+### 3. Enhanced Community Experience (NEW)
+- **Browse Community**: Visit the Community page to explore shared insights
+- **Space-Efficient Viewing**: All insights start collapsed to save space and improve scanning
+- **Expand Details**: Click "Show Details" button to see full insight context with confidence scores
+- **Full-Width Display**: Expanded insights span the entire table width for optimal readability
+- **Filter Content**: Use tabs to sort by Recent, Trending, Most Liked, or Featured insights
+- **Engage with Content**: Like insights you find valuable to help surface quality content
+- **Community Building**: Your likes help others discover great insights and strengthen the learning community
 
 ### 4. Social Features
 - **Share Insights**: Your insights are public by default (toggle privacy in sidebar)
-- **Like Content**: Click heart buttons to like insights from other users
-- **Browse Community**: View insights from all users in the main feed
+- **One-Time Likes**: Click heart buttons to like insights (disabled after liking)
+- **Browse Community**: View insights from all users with interactive filtering
 - **Author Information**: See who created each insight for credibility
 - **Privacy Control**: Authors can make their insights private anytime
 
@@ -223,7 +282,7 @@ docker-compose -f docker-compose.insight.yml up
 - **Font Awesome 6**: Updated icon library with social interaction symbols
 - **Custom CSS3**: Modern gradient design with CSS Grid and Flexbox
 - **Firebase SDK**: Client-side authentication and user management
-- **Enhanced JavaScript**: Interactive features with real-time social updates and loading states
+- **Enhanced JavaScript**: Interactive features with toggleable content, real-time social updates and loading states
 
 ### Backend
 - **Flask 3.1.1**: Latest Python web framework with improved security
@@ -242,22 +301,22 @@ docker-compose -f docker-compose.insight.yml up
 └─────────────┘    └─────────────┘    └─────────────┘    └─────────────┘
 ```
 
-### Social Features Pipeline
+### Community Features Pipeline
 ```
-┌─────────────┐    ┌─────────────┐    ┌─────────────┐
-│  Generate   │ -> │    Save     │ -> │   Share     │
-│  Insight    │    │  with User  │    │ with Like   │
-│             │    │    Data     │    │  Feature    │
-└─────────────┘    └─────────────┘    └─────────────┘
+┌─────────────┐    ┌─────────────┐    ┌─────────────┐    ┌─────────────┐
+│  Generate   │ -> │    Save     │ -> │   Share     │ -> │  Community  │
+│  Insight    │    │  with User  │    │ with Like   │    │  Display    │
+│             │    │    Data     │    │  Feature    │    │ (Toggleable)│
+└─────────────┘    └─────────────┘    └─────────────┘    └─────────────┘
 ```
 
 ### Enhanced User Experience Flow
 ```
-┌─────────────┐    ┌─────────────┐    ┌─────────────┐
-│   Form      │ -> │   Loading   │ -> │   Results   │
-│Validation & │    │States with  │    │with Social  │
-│ Protection  │    │ Feedback    │    │ Features    │
-└─────────────┘    └─────────────┘    └─────────────┘
+┌─────────────┐    ┌─────────────┐    ┌─────────────┐    ┌─────────────┐
+│   Form      │ -> │   Loading   │ -> │   Results   │ -> │  Community  │
+│Validation & │    │States with  │    │with Social  │    │  Sharing    │
+│ Protection  │    │ Feedback    │    │ Features    │    │ & Toggle    │
+└─────────────┘    └─────────────┘    └─────────────┘    └─────────────┘
 ```
 
 ### Project Structure (Updated)
@@ -270,8 +329,9 @@ docker-compose -f docker-compose.insight.yml up
 │   └── routes.py            # Authentication routes
 ├── templates/               # Jinja2 templates with auth features
 │   ├── base.html           # Base template with user navigation
-│   ├── base_auth.html      # Clean auth template without sidebar
+│   ├── base_auth.html      # Clean auth template with consistent navigation
 │   ├── index.html          # Home page with enhanced UX
+│   ├── community.html      # Community page with toggleable insights (NEW)
 │   ├── insights.html       # Insights display with social features
 │   └── auth/               # Authentication templates
 │       ├── login.html      # Login page with Firebase integration
@@ -294,12 +354,15 @@ docker-compose -f docker-compose.insight.yml up
 - `POST /generate` - Generate insights (requires login) with loading states and usage tracking
 - `GET /insights/<id>` - View specific insights with social data
 - `POST /delete/<id>` - Delete insights (owner only)
+- `GET /community` - Community page with toggleable insight details and filtering
 - `GET /api/shared-insights` - JSON API for public insights
 - `GET /api/my-insights` - Get current user's insights for dashboard table (requires login)
 - `GET /api/usage-stats` - Get user's current usage statistics and limits
 - `GET /api/dashboard-analytics` - Comprehensive dashboard analytics and metrics
 - `POST /api/insights/<id>/like` - Like/unlike insights (requires login)
 - `POST /api/insights/<id>/share` - Toggle privacy (author only)
+- `GET /api/insights/trending` - Get trending insights for community feed
+- `GET /api/insights/feed` - Paginated community feed with filtering
 - `POST /auth/api/login` - Firebase authentication endpoint with session setup
 - `POST /auth/api/signup` - User registration endpoint with session setup
 - `GET /auth/dashboard` - User account dashboard with usage analytics and My Insights table
@@ -328,12 +391,19 @@ The application uses Firebase for secure user authentication:
 - **Usage Limits**: Plan-based rate limiting and quota enforcement for resource protection
 
 ### User Permissions
-- **Public**: Browse shared insights, view community feed
-- **Authenticated**: Generate insights, like content, manage privacy
+- **Public**: Browse shared insights, view community feed with toggleable details
+- **Authenticated**: Generate insights, like content once per insight, manage privacy
 - **Author**: Full control over own insights (edit privacy, delete)
 - **Admin**: Future role for content moderation
 
 ## 🌟 Social Features Implementation
+
+### Enhanced Community Platform
+- **Toggleable Details**: Space-efficient design with expandable insight context
+- **Full-Width Display**: Expanded insights span all table columns for maximum readability
+- **Confidence Scoring**: Visual confidence badges with percentage display
+- **Smart Filtering**: Recent, Trending, Most Liked, and Featured categories
+- **Engagement Messaging**: Clear guidance on community participation and value of likes
 
 ### Sharing System
 - **Default Public**: New insights are shared by default (opt-out model)
@@ -342,7 +412,7 @@ The application uses Firebase for secure user authentication:
 - **Guest Access**: Non-authenticated users can browse public content
 
 ### Like System
-- **Real-time Interaction**: Heart buttons with immediate visual feedback
+- **One-Time Interaction**: Users can like each insight once with disabled state after liking
 - **User Tracking**: Prevents duplicate likes from same user
 - **Atomic Operations**: Firestore transactions ensure data consistency
 - **Login Required**: Only authenticated users can like content
@@ -353,6 +423,7 @@ The application uses Firebase for secure user authentication:
 - **Progress Indicators**: Keep users informed during long operations
 - **Double-click Protection**: Prevents accidental duplicate submissions
 - **Graceful Error Handling**: User-friendly error messages and recovery
+- **Interactive Toggles**: Smooth expand/collapse animations with visual feedback
 
 ### Data Model
 ```python
@@ -363,7 +434,17 @@ The application uses Firebase for secure user authentication:
     "source_type": "finance",  # general, news, or finance
     "time_range": "week",      # none, day, week, month, or year
     "instructions": "User-provided guidance",
-    "content": "Generated insight",
+    "insights": [              # List of InsightItem objects with confidence scores
+        {
+            "title": "Insight title",
+            "summary": "Detailed summary",
+            "confidence_score": 0.90,  # 0-1 scale for percentage display
+            "key_points": ["point1", "point2"],
+            "detailed_report": "Full analysis",
+            "significance": "Why this matters",
+            "sources": ["url1", "url2"]
+        }
+    ],
     "author_id": "firebase_user_id",
     "author_name": "User Name",
     "author_email": "user@example.com",
@@ -456,7 +537,7 @@ All features have been thoroughly tested:
 4. **Session Timeout Management**: ✅ Automated 15-minute inactivity-based expiration
 5. **Advanced Search Parameters**: ✅ Source type and time range filtering working
 6. **Search Tool Fallback**: ✅ Robust error handling and automatic fallback mechanisms
-7. **Social Features**: ✅ Like system and privacy controls functional
+7. **Social Features**: ✅ One-time like system and privacy controls functional
 8. **Public Sharing**: ✅ Guest access to community insights
 9. **Protected Routes**: ✅ Login requirements properly enforced
 10. **Web Interface**: ✅ Responsive UI with authentication integration
@@ -472,6 +553,9 @@ All features have been thoroughly tested:
 20. **Plan-based Limits**: ✅ Quota enforcement and proactive warnings
 21. **My Insights Table**: ✅ Interactive sortable table with column sorting functionality
 22. **Insights Management**: ✅ View, sort, and manage user insights efficiently
+23. **Community Platform**: ✅ Toggleable insight details with full-width display
+24. **Navigation Consistency**: ✅ Community link across all templates
+25. **Confidence Scoring**: ✅ Visual confidence badges with percentage display
 
 ### Authentication Testing
 - [x] Email/password registration and login
@@ -484,13 +568,24 @@ All features have been thoroughly tested:
 - [x] Activity tracking and session renewal
 - [x] Dual-layer timeout (server + client-side)
 
+### Community Platform Testing
+- [x] Toggleable insight details functionality
+- [x] Full-width insight display across table columns
+- [x] Confidence score display with percentage formatting
+- [x] Smooth expand/collapse animations
+- [x] Space-efficient collapsed state
+- [x] Navigation consistency across all templates
+- [x] Community engagement messaging
+- [x] Filter tabs (Recent, Trending, Most Liked, Featured)
+
 ### Social Features Testing
 - [x] Default public sharing of new insights
-- [x] Like button functionality and counters
+- [x] One-time like button functionality with disabled state
 - [x] Privacy toggle for insight authors
 - [x] Guest user access to public content
 - [x] Author information display
 - [x] Real-time UI updates for social interactions
+- [x] Most Liked filter with proper sorting
 
 ### UX Enhancement Testing
 - [x] Loading button states during insight generation
@@ -499,6 +594,7 @@ All features have been thoroughly tested:
 - [x] Progress feedback and user communication
 - [x] Topic suggestion functionality
 - [x] Character counters and form helpers
+- [x] Toggleable content with smooth animations
 
 ### Search Parameters Testing
 - [x] Source type dropdown (General, News, Finance & Business)
@@ -536,9 +632,15 @@ All features have been thoroughly tested:
 - [x] Responsive table design on all screen sizes
 - [x] User-specific data filtering (author_id based)
 
-## 🆘 Troubleshooting (Updated June 2025)
+## 🆘 Troubleshooting (Updated January 2025)
 
 ### Common Issues
+
+#### Community Platform Issues
+- **Toggle not working**: Ensure JavaScript is enabled and try refreshing the page
+- **Insights not expanding**: Check browser console for JavaScript errors
+- **Details showing incorrectly**: Clear browser cache and reload the page
+- **Navigation missing Community link**: Verify you're using updated templates
 
 #### Dependency Issues
 - **"ModuleNotFoundError: google.cloud.secretmanager"**: Install missing dependency with `pip3 install google-cloud-secret-manager`
@@ -553,6 +655,7 @@ All features have been thoroughly tested:
 
 #### Social Features Issues
 - **Like button not working**: Ensure you're logged in and try refreshing
+- **Like button not disabling**: Check that you haven't already liked the insight
 - **Privacy toggle not saving**: Check network connection and try again
 - **Can't see own insights**: Verify you're logged in with the correct account
 - **Delete button missing**: Only insight authors can delete their content
@@ -597,6 +700,7 @@ All features have been thoroughly tested:
 - **Page load delays**: Check network connection and clear browser cache
 - **Social features lag**: Firestore operations may take 1-2 seconds
 - **High token usage**: Monitor OpenAI dashboard for usage patterns
+- **Toggle animations slow**: Check browser performance and disable animations if needed
 
 #### Docker Issues
 - **Build failures**: Ensure all dependencies are available and Docker has sufficient resources
@@ -622,12 +726,14 @@ All features have been thoroughly tested:
 
 ### Short Term (Q1-Q2 2025) - ✅ COMPLETED
 - **User Authentication**: ✅ Firebase authentication implemented
-- **Social Features**: ✅ Public sharing and like system working
-- **Community Feed**: ✅ Browse insights from all users
+- **Social Features**: ✅ One-time like system and privacy controls working
+- **Community Feed**: ✅ Browse insights from all users with toggleable details
 - **User Profiles**: ✅ Basic author attribution implemented
 - **Loading States**: ✅ Enhanced UX with progress feedback
 - **Docker Support**: ✅ Production-ready containerization
 - **Dependency Management**: ✅ Optimized package requirements
+- **Community Platform**: ✅ Toggleable insight details with full-width display
+- **Navigation Consistency**: ✅ Community link across all templates
 
 ### Medium Term (Q3-Q4 2025)
 - **Enhanced User Profiles**: Detailed profile pages with user statistics
@@ -638,6 +744,7 @@ All features have been thoroughly tested:
 - **Trending Topics**: Highlight popular research areas
 - **Real-time Notifications**: Live updates for likes and comments
 - **Improved Loading UX**: Progress bars and estimated completion times
+- **Bulk Actions**: Select multiple insights for batch operations
 
 ### Long Term (2026+)
 - **Real-time Collaboration**: Co-create insights with team members
@@ -653,4 +760,4 @@ All features have been thoroughly tested:
 
 **Powered by Firebase Authentication, CrewAI 0.134.0 Multi-Agent System, Flask 3.1.1 & Docker** 🔐🤖✨🐳
 
-*Last Updated: June 2025 - Now featuring advanced search parameters with source type filtering (General, News, Finance & Business) and time range controls, enhanced search tool error handling with robust fallback mechanisms, health monitoring endpoint, interactive My Insights table with sortable columns for better insights management, and production-ready infrastructure for collaborative AI insights generation.* 
+*Last Updated: June 29 2025 - Now featuring an enhanced Community platform with toggleable insight details, full-width display, confidence scoring, consistent navigation across all templates, advanced search parameters with source type filtering (General, News, Finance & Business) and time range controls, enhanced search tool error handling with robust fallback mechanisms, health monitoring endpoint, interactive My Insights table with sortable columns for better insights management, and production-ready infrastructure for collaborative AI insights generation.* 

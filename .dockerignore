@@ -27,6 +27,9 @@ include/
 pyvenv.cfg
 lib/
 share/
+.venv/
+venv/
+ENV/
 
 # Development files
 .git/
@@ -42,6 +45,7 @@ share/
 CLAUDE.md
 GEMINI.md
 DOCKER_FIREBASE_UPDATE.md
+CLOUDBUILD_DEPLOYMENT.md
 social-features-implementation.md
 firestore-manager-fix.md
 authentication-fixes-summary.md
@@ -54,11 +58,14 @@ test_*.py
 *_test.py
 tests/
 
-# Docker files (don't include other Docker files)
+# Docker and deployment files (don't include other Docker files)
 docker-compose*.yml
 Dockerfile*
 !Dockerfile.insight
 build-*.sh
+setup-*.sh
+cloudbuild*.yaml
+.cloudbuild-commands.md
 
 # Environment and config files that shouldn't be in image
 .env
@@ -94,8 +101,12 @@ temp/
 ehthumbs.db
 Thumbs.db
 
-# Node modules (if any)
+# Node modules and build artifacts (will be built in Docker)
 node_modules/
 npm-debug.log*
 yarn-debug.log*
-yarn-error.log* 
+yarn-error.log*
+
+# Built frontend assets (will be built in Docker)
+static/dist/
+.vite/ 

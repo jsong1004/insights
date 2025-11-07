@@ -42,6 +42,21 @@ class GeneratedInsights(BaseModel):
     likes: int = Field(description="Number of likes", default=0)
     liked_by: List[str] = Field(description="List of user IDs who liked this", default_factory=list)
 
+    # Admin features
+    is_pinned: bool = Field(description="Whether this insight is pinned by admin", default=False)
+    pinned_by: Optional[str] = Field(description="Admin user ID who pinned this", default=None)
+    pinned_at: Optional[str] = Field(description="When this insight was pinned", default=None)
+
+    # Enhanced metadata
+    view_count: int = Field(description="Number of times viewed", default=0)
+    featured: bool = Field(description="Whether featured on homepage", default=False)
+    category: Optional[str] = Field(description="Category/tag for the insight", default=None)
+    language: str = Field(description="Language of the content", default="en")
+
+    # Quality metrics
+    quality_score: Optional[float] = Field(description="Overall quality score 0-1", default=None)
+    engagement_score: Optional[float] = Field(description="Engagement score based on likes/views", default=None)
+
 class AIInsightsCrew:
     """CrewAI crew for generating custom insights based on user input"""
     
