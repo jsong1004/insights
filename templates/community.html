@@ -1,0 +1,309 @@
+{% extends "base.html" %}
+
+{% block title %}Community Insights - AI Insights Generator{% endblock %}
+
+{% block content %}
+<div class="community-page">
+    <!-- Community Header -->
+    <div class="community-header text-center">
+        <h1 class="community-title">
+            <i class="fas fa-users me-3"></i>Community Insights
+        </h1>
+        <p class="community-subtitle">
+            Discover insights shared by our community
+        </p>
+        <p class="community-description">
+            Explore AI-generated research and analysis on various topics from users around the world
+        </p>
+    </div>
+
+    <div class="container">
+        <!-- Filter Controls -->
+        <div class="feed-controls">
+            <div class="filter-tabs">
+                <a href="{{ url_for('main.community', sort='recent') }}"
+                   class="filter-tab {% if sort_by == 'recent' %}active{% endif %}">
+                    <i class="fas fa-clock me-2"></i>Recent
+                </a>
+                <a href="{{ url_for('main.community', sort='trending') }}"
+                   class="filter-tab {% if sort_by == 'trending' %}active{% endif %}">
+                    <i class="fas fa-fire me-2"></i>Trending
+                </a>
+                <a href="{{ url_for('main.community', sort='most_liked') }}"
+                   class="filter-tab {% if sort_by == 'most_liked' %}active{% endif %}">
+                    <i class="fas fa-heart me-2"></i>Most Liked
+                </a>
+                <a href="{{ url_for('main.community', sort='featured') }}"
+                   class="filter-tab {% if sort_by == 'featured' %}active{% endif %}">
+                    <i class="fas fa-star me-2"></i>Featured
+                </a>
+            </div>
+        </div>
+
+        <!-- Insights Grid -->
+        {% if insights %}
+        <div class="insights-grid">
+            {% for insight in insights %}
+            <div class="insight-card fade-in">
+                <!-- Card Header -->
+                <div class="insight-card-header">
+                    <h3 class="insight-card-title">
+                        <i class="fas fa-lightbulb me-2 text-primary"></i>
+                        <a href="{{ url_for('main.view_insight', insight_id=insight.id) }}" class="text-decoration-none">
+                            {{ insight.topic }}
+                        </a>
+                    </h3>
+                    <button class="like-btn btn btn-sm {% if insight.id in user_liked_insights %}btn-danger{% else %}btn-outline-danger{% endif %}"
+                            onclick="toggleLike('{{ insight.id }}', this)"
+                            data-liked="{{ 'true' if insight.id in user_liked_insights else 'false' }}">
+                        <i class="fas fa-heart me-1"></i>
+                        <span class="like-count">{{ insight.likes }}</span>
+                    </button>
+                </div>
+
+                <!-- Card Body -->
+                <div class="insight-card-body">
+                    {% if insight.insights and insight.insights|length > 0 %}
+                        <p class="insight-preview">
+                            {{ insight.insights[0].summary[:200] }}{% if insight.insights[0].summary|length > 200 %}...{% endif %}
+                        </p>
+                    {% else %}
+                        <p class="insight-preview text-muted">
+                            <em>Click to view the complete analysis and insights...</em>
+                        </p>
+                    {% endif %}
+
+                    <div class="insight-badges">
+                        <span class="badge bg-primary me-2">
+                            <i class="fas fa-brain me-1"></i>{{ insight.total_insights }} Insights
+                        </span>
+                        {% if insight.total_tokens %}
+                        <span class="badge bg-info">
+                            <i class="fas fa-bolt me-1"></i>{{ "{:,}".format(insight.total_tokens) }} tokens
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Card Footer -->
+                <div class="insight-card-footer">
+                    <div class="author-info">
+                        <i class="fas fa-user-circle text-primary me-2"></i>
+                        <span class="author-name">{{ insight.author_name or 'Anonymous' }}</span>
+                    </div>
+                    <div class="insight-meta">
+                        <span class="insight-date">
+                            <i class="fas fa-calendar-alt me-1"></i>
+                            {{ insight.timestamp.strftime('%b %d, %Y') if insight.timestamp else 'Unknown date' }}
+                        </span>
+                    </div>
+                    <a href="{{ url_for('main.view_insight', insight_id=insight.id) }}"
+                       class="btn btn-primary btn-sm">
+                        View Details <i class="fas fa-arrow-right ms-1"></i>
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Pagination -->
+        {% if total_pages > 1 %}
+        <div class="pagination-wrapper">
+            <nav aria-label="Insights pagination">
+                <ul class="pagination">
+                    {% if page > 1 %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('main.community', sort=sort_by, page=page-1) }}">
+                            <i class="fas fa-chevron-left"></i> Previous
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    {% for p in range(1, total_pages + 1) %}
+                        {% if p == page %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ p }}</span>
+                        </li>
+                        {% elif p == 1 or p == total_pages or (p >= page - 2 and p <= page + 2) %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('main.community', sort=sort_by, page=p) }}">{{ p }}</a>
+                        </li>
+                        {% elif p == page - 3 or p == page + 3 %}
+                        <li class="page-item disabled">
+                            <span class="page-link">...</span>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if page < total_pages %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('main.community', sort=sort_by, page=page+1) }}">
+                            Next <i class="fas fa-chevron-right"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+        {% endif %}
+
+        {% else %}
+        <!-- Empty State -->
+        <div class="empty-state">
+            <i class="fas fa-inbox fa-4x"></i>
+            <h3>No Insights Yet</h3>
+            <p>Be the first to share an insight with the community!</p>
+            <a href="{{ url_for('main.insights') }}" class="btn btn-primary mt-3">
+                <i class="fas fa-plus-circle me-2"></i>Generate Your First Insight
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+/* Community Insights Card Grid Styles */
+.insights-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: var(--space-6);
+    margin: var(--space-8) 0;
+}
+
+.insight-card {
+    background: var(--bg-primary);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-xl);
+    padding: var(--space-6);
+    transition: all var(--duration-normal) var(--ease-out);
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    box-shadow: var(--shadow-sm);
+}
+
+.insight-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-xl);
+    border-color: var(--primary-500);
+}
+
+.insight-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: var(--space-4);
+    gap: var(--space-3);
+}
+
+.insight-card-title {
+    font-size: var(--text-lg);
+    font-weight: var(--font-semibold);
+    margin: 0;
+    flex: 1;
+    line-height: var(--leading-tight);
+}
+
+.insight-card-title a {
+    color: var(--text-primary);
+    transition: color var(--duration-fast) var(--ease-out);
+}
+
+.insight-card-title a:hover {
+    color: var(--primary-600);
+}
+
+.like-btn {
+    flex-shrink: 0;
+    border-radius: var(--radius-full);
+    padding: var(--space-2) var(--space-3);
+    transition: all var(--duration-fast) var(--ease-out);
+}
+
+.like-btn:hover {
+    transform: scale(1.1);
+}
+
+.insight-card-body {
+    flex: 1;
+    margin-bottom: var(--space-4);
+}
+
+.insight-preview {
+    color: var(--text-secondary);
+    font-size: var(--text-sm);
+    line-height: var(--leading-relaxed);
+    margin-bottom: var(--space-3);
+}
+
+.insight-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+}
+
+.insight-badges .badge {
+    font-size: var(--text-xs);
+    padding: var(--space-1) var(--space-3);
+    border-radius: var(--radius-full);
+}
+
+.insight-card-footer {
+    border-top: 1px solid var(--gray-200);
+    padding-top: var(--space-4);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+.author-info {
+    display: flex;
+    align-items: center;
+    font-size: var(--text-sm);
+}
+
+.author-name {
+    color: var(--text-primary);
+    font-weight: var(--font-medium);
+}
+
+.insight-meta {
+    display: flex;
+    align-items: center;
+    font-size: var(--text-xs);
+    color: var(--text-secondary);
+}
+
+.insight-date {
+    display: flex;
+    align-items: center;
+}
+
+.insight-card-footer .btn {
+    align-self: flex-start;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .insights-grid {
+        grid-template-columns: 1fr;
+        gap: var(--space-4);
+    }
+
+    .insight-card-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .like-btn {
+        align-self: flex-end;
+    }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+    .insights-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+</style>
+{% endblock %}

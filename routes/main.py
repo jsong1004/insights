@@ -174,6 +174,71 @@ def view_insight(insight_id):
     
     return render_template('insights.html', insights=insights)
 
+@main_bp.route('/community')
+def community():
+    """Community page showing all shared insights"""
+    # Get sort and page parameters
+    sort_by = request.args.get('sort', 'recent')
+    page = int(request.args.get('page', 1))
+    per_page = 12
+
+    # Fetch insights based on sort option
+    try:
+        if sort_by == 'trending':
+            # Get trending insights (high likes + recent)
+            all_insights = insights_firestore_manager.get_shared_insights()
+            # Sort by likes descending, then by timestamp
+            all_insights.sort(key=lambda x: (x.likes, x.timestamp), reverse=True)
+        elif sort_by == 'most_liked':
+            # Get most liked insights
+            all_insights = insights_firestore_manager.get_shared_insights()
+            all_insights.sort(key=lambda x: x.likes, reverse=True)
+        elif sort_by == 'featured':
+            # Get featured insights
+            all_insights = insights_firestore_manager.get_featured_insights()
+        else:  # recent (default)
+            # Get recent shared insights
+            all_insights = insights_firestore_manager.get_shared_insights()
+            all_insights.sort(key=lambda x: x.timestamp, reverse=True)
+
+        # Pagination
+        total_insights = len(all_insights)
+        total_pages = (total_insights + per_page - 1) // per_page  # Ceiling division
+
+        start = (page - 1) * per_page
+        end = start + per_page
+        insights = all_insights[start:end]
+
+        # Get user's liked insights if logged in
+        user_liked_insights = []
+        user_id = session.get('user_id')
+        if user_id:
+            try:
+                firestore_manager = current_app.extensions.get('firestore_manager')
+                if firestore_manager:
+                    # Get user data to check liked insights
+                    user_data = firestore_manager.get_user_data(user_id)
+                    user_liked_insights = user_data.get('liked_insights', []) if user_data else []
+            except Exception as e:
+                logger.warning(f"Could not get user liked insights: {e}")
+
+        return render_template('community.html',
+                             insights=insights,
+                             sort_by=sort_by,
+                             page=page,
+                             total_pages=total_pages,
+                             user_liked_insights=user_liked_insights)
+
+    except Exception as e:
+        logger.error(f"Error loading community page: {e}")
+        flash('Error loading community insights.', 'error')
+        return render_template('community.html',
+                             insights=[],
+                             sort_by=sort_by,
+                             page=1,
+                             total_pages=0,
+                             user_liked_insights=[])
+
 @main_bp.route('/delete/<insight_id>', methods=['POST'])
 @login_required
 def delete_insights(insight_id):
@@ -183,7 +248,7 @@ def delete_insights(insight_id):
         flash('Insights deleted successfully.', 'success')
     else:
         flash('Insights not found.', 'error')
-    
+
     return redirect(url_for('main.index'))
 
 @main_bp.route('/download/<insight_id>')
