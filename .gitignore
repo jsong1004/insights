@@ -23,6 +23,7 @@ ENV/
 # Environment Variables
 .env
 .env.*
+.env.local
 .envrc
 
 # Firebase/Google Cloud Credentials
@@ -41,10 +42,12 @@ instance/
 *.log
 logs/
 
-# Node/npm (if any frontend)
+# Node/npm (frontend build system)
 node_modules/
 yarn.lock
 package-lock.json
+.vite/
+.turbo/
 
 # Build
 lib/
@@ -67,14 +70,21 @@ htmlcov/
 # Misc
 *.bak
 *.tmp
+pglite-debug.log
+
+# Python package artifacts
+share/
 
 # Ignore downloads and reports
 downloads/
 *.html.report
 
-# Ignore compiled JS/CSS (if using frontend build tools)
-/static/js/
-/static/css/
+# Ignore compiled JS/CSS from Vite build
+/static/dist/
+.vite-manifest.json
+
+# Keep source files
+!/static/src/
 
 # Byte-compiled / optimized / DLL files
 *.so

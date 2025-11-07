@@ -1,5 +1,7 @@
 {% extends "base.html" %}
 
+{% block body_attrs %} data-page="insights"{% endblock %}
+
 {% block title %}AI Insights - {{ insights.topic }}{% endblock %}
 
 {% block content %}
@@ -263,9 +265,22 @@
     <a href="{{ url_for('main.index') }}" class="btn btn-primary btn-lg me-3">
         <i class="fas fa-plus me-2"></i>Generate New Insights
     </a>
-                            <a href="{{ url_for('main.download_insights', insight_id=insights.id) }}" class="btn btn-outline-success btn-lg">
-        <i class="fas fa-download me-2"></i>Download Report
-    </a>
+    <div class="btn-group">
+        <a href="{{ url_for('main.download_insights', insight_id=insights.id) }}" class="btn btn-outline-success btn-lg">
+            <i class="fas fa-download me-2"></i>Download Report
+        </a>
+        <button type="button" class="btn btn-outline-success btn-lg dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
+            <span class="visually-hidden">Toggle Dropdown</span>
+        </button>
+        <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="{{ url_for('main.download_insights', insight_id=insights.id, format='html') }}">
+                <i class="fas fa-file-code me-2"></i>Download as HTML
+            </a></li>
+            <li><a class="dropdown-item" href="{{ url_for('main.download_insights', insight_id=insights.id, format='pdf') }}">
+                <i class="fas fa-file-pdf me-2"></i>Download as PDF
+            </a></li>
+        </ul>
+    </div>
 </div>
 {% endblock %}
 

@@ -1,0 +1,24 @@
+{
+  "name": "ai-insights-frontend",
+  "version": "2.0.0",
+  "description": "Frontend build system for Flask AI Insights application",
+  "type": "module",
+  "scripts": {
+    "dev": "NODE_OPTIONS='--max-http-header-size=16384' vite",
+    "build": "vite build",
+    "watch": "vite build --watch",
+    "preview": "vite preview",
+    "type-check": "tsc --noEmit",
+    "dev:clean": "npm run dev -- --clearScreen false"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.6",
+    "typescript": "^5.3.3",
+    "vite": "^5.0.10"
+  },
+  "dependencies": {},
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  }
+}
