@@ -14,7 +14,7 @@ steps:
       - '-f'
       - 'Dockerfile.insight'
       - '-t'
-      - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/${_IMAGE_NAME}:dev-$SHORT_SHA'
+      - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/${_IMAGE_NAME}:${_IMAGE_TAG}'
       - '-t'
       - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/${_IMAGE_NAME}:dev-latest'
       - '--build-arg'
@@ -40,7 +40,7 @@ steps:
       - 'run'
       - 'deploy'
       - 'ai-insights-generator-dev'
-      - '--image=${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/${_IMAGE_NAME}:dev-$SHORT_SHA'
+      - '--image=${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/${_IMAGE_NAME}:${_IMAGE_TAG}'
       - '--region=${_REGION}'
       - '--platform=managed'
       - '--allow-unauthenticated'
@@ -62,6 +62,7 @@ substitutions:
   _REGION: 'us-west1'
   _REPOSITORY: 'cloud-run-source-deploy'
   _IMAGE_NAME: 'ai-insights-generator'
+  _IMAGE_TAG: 'dev-manual'  # Default tag for manual dev builds
   _SERVICE_ACCOUNT: 'ai-insights-service'
 
 options:
@@ -73,7 +74,7 @@ options:
 timeout: '2400s'
 
 images:
-  - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/${_IMAGE_NAME}:dev-$SHORT_SHA'
+  - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/${_IMAGE_NAME}:${_IMAGE_TAG}'
   - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/${_IMAGE_NAME}:dev-latest'
 
 tags:
