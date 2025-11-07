@@ -1,10 +1,26 @@
 # AI Insights Generator Flask App - Dockerfile
+# Multi-stage build: Stage 1 - Build frontend assets
+FROM node:20-slim AS frontend-builder
+
+WORKDIR /frontend
+
+# Copy frontend dependencies
+COPY package.json package-lock.json* ./
+COPY static/src/ ./static/src/
+COPY vite.config.js ./
+COPY tsconfig.json ./
+
+# Install Node dependencies and build frontend
+RUN npm ci --no-audit --no-fund && \
+    npm run build
+
+# Stage 2 - Python application
 FROM python:3.11-slim
 
 # Set metadata
 LABEL maintainer="AI Insights Generator"
-LABEL description="Flask web application for generating AI insights using CrewAI multi-agent system with Firebase authentication, usage statistics tracking, and automated session timeout management"
-LABEL version="2.1"
+LABEL description="Flask web application with TypeScript frontend, generating AI insights using CrewAI multi-agent system with Firebase authentication, usage statistics tracking, and automated session timeout management"
+LABEL version="2.2"
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1 \
@@ -33,11 +49,16 @@ RUN pip install --no-cache-dir -r requirements-firebase.txt
 COPY app.py .
 COPY config.py .
 COPY templates/ templates/
-COPY static/ static/
 COPY auth/ auth/
 COPY core/ core/
 COPY routes/ routes/
 COPY functions/ functions/
+
+# Copy static source files (needed for runtime reference)
+COPY static/src/ static/src/
+
+# Copy built frontend assets from the frontend-builder stage
+COPY --from=frontend-builder /frontend/static/dist/ static/dist/
 
 # Copy Firebase service account key if it exists (optional for local development)
 COPY service-account-key.json* ./
@@ -68,6 +89,13 @@ ENV FLASK_APP=app.py \
 # Firebase configuration will be provided via Cloud Run secrets
 # No sensitive data is stored in the Docker image
 # Usage statistics and session timeout are configured via environment variables
+
+# Build Notes:
+# - Frontend assets are built during Docker build using Vite
+# - TypeScript is compiled to JavaScript in the build stage
+# - All static assets are hashed and cached efficiently
+# - Multi-stage build reduces final image size
+# - Built assets are copied from frontend-builder to main image
 
 # Run the application
 CMD ["python", "app.py"] 

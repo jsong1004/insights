@@ -27,6 +27,9 @@ include/
 pyvenv.cfg
 lib/
 share/
+.venv/
+venv/
+ENV/
 
 # Development files
 .git/
@@ -94,8 +97,13 @@ temp/
 ehthumbs.db
 Thumbs.db
 
-# Node modules (if any)
+# Node modules and build artifacts (will be built in Docker)
 node_modules/
 npm-debug.log*
 yarn-debug.log*
-yarn-error.log* 
+yarn-error.log*
+package-lock.json
+
+# Built frontend assets (will be built in Docker)
+static/dist/
+.vite/ 
