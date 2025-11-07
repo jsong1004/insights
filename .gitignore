@@ -72,9 +72,8 @@ htmlcov/
 downloads/
 *.html.report
 
-# Ignore compiled JS/CSS (if using frontend build tools)
-/static/js/
-/static/css/
+# Ignore compiled/built JS/CSS (from build tools)
+/static/dist/
 
 # Byte-compiled / optimized / DLL files
 *.so

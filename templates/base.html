@@ -6,150 +6,65 @@
     <meta http-equiv="refresh" content="900;url={{ url_for('auth.api_logout') }}" />
     <title>{% block title %}AI Insights Generator{% endblock %}</title>
     
+    <!-- Google Fonts - Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
+
+    <!-- Design System CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/design-system.css') }}">
+
+    <!-- Application CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+
     {% block head %}{% endblock %}
-    
-    <!-- Custom CSS -->
+
+    <!-- Legacy Support Styles -->
     <style>
-        :root {
-            --primary-color: #667eea;
-            --secondary-color: #764ba2;
-            --accent-color: #f093fb;
-            --success-color: #10b981;
-            --warning-color: #f59e0b;
-            --error-color: #ef4444;
-            --dark-color: #1f2937;
-            --light-color: #f8fafc;
-        }
-
-        body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-
-        .navbar {
-            background: rgba(255, 255, 255, 0.95) !important;
-            backdrop-filter: blur(10px);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .navbar-brand {
-            font-weight: 700;
-            color: var(--primary-color) !important;
-        }
-
-        .nav-link {
-            color: var(--dark-color) !important;
-            font-weight: 500;
-            transition: color 0.3s ease;
-        }
-
-        .nav-link:hover {
-            color: var(--primary-color) !important;
-        }
-
-        .main-container {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-            margin: 2rem auto;
-            overflow: hidden;
-        }
-
-        .sidebar {
-            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-            border-right: 1px solid rgba(0, 0, 0, 0.1);
-            min-height: 600px;
-        }
-
-        .sidebar-header {
-            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
-            color: white;
-            padding: 1.5rem;
-            font-weight: 600;
-        }
-
-        .insight-item {
-            background: white;
-            border: 1px solid #e2e8f0;
-            border-radius: 12px;
-            margin-bottom: 1rem;
-            padding: 1rem;
-            transition: all 0.3s ease;
-            cursor: pointer;
-        }
-
-        .insight-item:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
-            border-color: var(--primary-color);
-        }
-
-        .insight-item.active {
-            border-color: var(--primary-color);
-            background: linear-gradient(135deg, #fef7ff 0%, #f3e8ff 100%);
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
-            border: none;
-            border-radius: 10px;
-            font-weight: 600;
-            padding: 0.75rem 2rem;
-            transition: all 0.3s ease;
-        }
-
+        /* Bootstrap compatibility overrides */
         .btn-primary:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
-        }
-
-        .btn-danger {
-            background: linear-gradient(135deg, var(--error-color) 0%, #dc2626 100%);
-            border: none;
-            border-radius: 8px;
-            font-size: 0.875rem;
-            padding: 0.5rem 1rem;
+            box-shadow: var(--shadow-lg);
         }
 
         .form-control, .form-select {
-            border: 2px solid #e2e8f0;
-            border-radius: 10px;
-            padding: 0.75rem 1rem;
-            transition: all 0.3s ease;
+            border: 2px solid var(--gray-200);
+            border-radius: var(--radius-lg);
+            padding: var(--space-3) var(--space-4);
+            transition: all var(--duration-slow) var(--ease-out);
         }
 
         .form-control:focus, .form-select:focus {
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+            border-color: var(--primary-600);
+            box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.25);
         }
 
         .alert {
             border: none;
-            border-radius: 12px;
-            font-weight: 500;
+            border-radius: var(--radius-xl);
+            font-weight: var(--font-medium);
         }
 
         .alert-success {
-            background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
-            color: #065f46;
-            border-left: 4px solid var(--success-color);
+            background: linear-gradient(135deg, var(--success-50) 0%, var(--success-100) 100%);
+            color: var(--success-700);
+            border-left: 4px solid var(--success-600);
         }
 
         .alert-danger {
-            background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
-            color: #991b1b;
-            border-left: 4px solid var(--error-color);
+            background: linear-gradient(135deg, var(--error-50) 0%, var(--error-100) 100%);
+            color: var(--error-700);
+            border-left: 4px solid var(--error-600);
         }
 
         .content-area {
-            padding: 2rem;
+            padding: var(--space-8);
         }
 
         .loading-spinner {
@@ -164,66 +79,35 @@
             display: none;
         }
 
-        .insight-card {
-            background: white;
-            border: 1px solid #e2e8f0;
-            border-radius: 15px;
-            padding: 2rem;
-            margin-bottom: 2rem;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-        }
-
-        .insight-title {
-            color: var(--dark-color);
-            font-weight: 700;
-            margin-bottom: 1rem;
-        }
-
-        .confidence-badge {
-            background: linear-gradient(135deg, var(--success-color) 0%, #059669 100%);
-            color: white;
-            padding: 0.25rem 0.75rem;
-            border-radius: 20px;
-            font-size: 0.875rem;
-            font-weight: 600;
-        }
-
-        .source-link {
-            color: var(--primary-color);
-            text-decoration: none;
-            font-weight: 500;
-        }
-
-        .source-link:hover {
-            color: var(--secondary-color);
-            text-decoration: underline;
-        }
-
         .user-menu {
             position: relative;
         }
 
         .dropdown-menu {
             border: none;
-            border-radius: 10px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-xl);
             z-index: 1050 !important;
             position: absolute !important;
         }
-        
+
         .navbar {
             z-index: 1040;
         }
 
         @media (max-width: 768px) {
             .main-container {
-                margin: 1rem;
-                border-radius: 15px;
+                margin: var(--space-4);
+                border-radius: var(--radius-xl);
             }
-            
+
             .sidebar {
                 border-right: none;
-                border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+                border-bottom: 1px solid var(--gray-200);
+            }
+
+            .content-area {
+                padding: var(--space-4);
             }
         }
     </style>
