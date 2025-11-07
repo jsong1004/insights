@@ -1,0 +1,71 @@
+# This file specifies files that are intentionally untracked by Git and should
+# be ignored when uploading to Cloud Build.
+# This file follows the same syntax as .gitignore.
+
+# Git files
+.git/
+.gitignore
+
+# Python cache and virtual environments
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+ENV/
+env/
+bin/
+lib/
+include/
+pyvenv.cfg
+share/
+
+# Node modules (will be installed during build)
+node_modules/
+
+# Build outputs (will be generated during build)
+static/dist/
+.vite/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Logs
+*.log
+logs/
+
+# Test files
+test_*.py
+*_test.py
+tests/
+
+# Documentation (except essential)
+*.md
+!README.md
+!CLAUDE.md
+
+# Environment files
+.env
+.env.*
+
+# Temporary files
+*.tmp
+*.bak
+pglite-debug.log
+
+# CI/CD files (not needed in Cloud Build)
+.github/
+
+# IMPORTANT: Include these files
+!package.json
+!package-lock.json
+!tsconfig.json
+!vite.config.js
+!Dockerfile.insight
+!requirements-firebase.txt
