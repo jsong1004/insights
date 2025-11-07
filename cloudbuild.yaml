@@ -134,13 +134,14 @@ images:
   - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/${_IMAGE_NAME}:${_IMAGE_TAG}'
   - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/${_IMAGE_NAME}:latest'
 
-# Artifacts to store
-artifacts:
-  objects:
-    location: 'gs://$PROJECT_ID-build-artifacts'
-    paths:
-      - 'static/dist/**'
-      - '.vite/manifest.json'
+# Artifacts to store (optional - comment out if bucket doesn't exist)
+# To enable, create bucket: gsutil mb gs://$PROJECT_ID-build-artifacts
+# artifacts:
+#   objects:
+#     location: 'gs://$PROJECT_ID-build-artifacts'
+#     paths:
+#       - 'static/dist/**'
+#       - '.vite/manifest.json'
 
 # Tags for organization
 tags:
