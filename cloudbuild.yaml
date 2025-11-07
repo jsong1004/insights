@@ -67,23 +67,23 @@ steps:
     args:
       - '-c'
       - |
-        SERVICE_URL=$(gcloud run services describe ${_SERVICE_NAME} \
+        SERVICE_URL=$$(gcloud run services describe ${_SERVICE_NAME} \
           --region=${_REGION} \
           --project=$PROJECT_ID \
           --format="value(status.url)")
 
-        echo "Service URL: $SERVICE_URL"
+        echo "Service URL: $$SERVICE_URL"
         echo "Waiting for service to be ready..."
         sleep 10
 
         # Test health endpoint
-        HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$SERVICE_URL/status" || echo "000")
+        HTTP_CODE=$$(curl -s -o /dev/null -w "%{http_code}" "$$SERVICE_URL/status" || echo "000")
 
-        if [ "$HTTP_CODE" = "200" ]; then
+        if [ "$$HTTP_CODE" = "200" ]; then
           echo "✅ Service health check passed"
-          echo "Service URL: $SERVICE_URL"
+          echo "Service URL: $$SERVICE_URL"
         else
-          echo "⚠️  Service health check returned: $HTTP_CODE"
+          echo "⚠️  Service health check returned: $$HTTP_CODE"
           echo "Service may still be starting up. Check logs:"
           echo "gcloud logging read 'resource.type=\"cloud_run_revision\" AND resource.labels.service_name=\"${_SERVICE_NAME}\"' --project=$PROJECT_ID --limit=50"
         fi
