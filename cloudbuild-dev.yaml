@@ -68,7 +68,9 @@ options:
   machineType: 'E2_HIGHCPU_8'
   diskSizeGb: 100
   logging: CLOUD_LOGGING_ONLY
-  timeout: '2400s'
+
+# Timeout for entire build (top-level, not in options)
+timeout: '2400s'
 
 images:
   - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/${_IMAGE_NAME}:dev-$SHORT_SHA'
