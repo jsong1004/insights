@@ -174,9 +174,9 @@ def view_insight(insight_id):
     
     return render_template('insights.html', insights=insights)
 
-@main_bp.route('/community')
-def community():
-    """Community page showing all shared insights"""
+@main_bp.route('/shared-insights')
+def shared_insights():
+    """Shared Insights page showing all publicly shared insights"""
     # Get sort and page parameters
     sort_by = request.args.get('sort', 'recent')
     page = int(request.args.get('page', 1))
@@ -230,8 +230,8 @@ def community():
                              user_liked_insights=user_liked_insights)
 
     except Exception as e:
-        logger.error(f"Error loading community page: {e}")
-        flash('Error loading community insights.', 'error')
+        logger.error(f"Error loading shared insights page: {e}")
+        flash('Error loading shared insights.', 'error')
         return render_template('community.html',
                              insights=[],
                              sort_by=sort_by,

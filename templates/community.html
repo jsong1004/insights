@@ -1,16 +1,16 @@
 {% extends "base.html" %}
 
-{% block title %}Community Insights - AI Insights Generator{% endblock %}
+{% block title %}Shared Insights - AI Insights Generator{% endblock %}
 
 {% block content %}
 <div class="community-page">
-    <!-- Community Header -->
+    <!-- Insights Header -->
     <div class="community-header text-center">
         <h1 class="community-title">
-            <i class="fas fa-users me-3"></i>Community Insights
+            <i class="fas fa-compass me-3"></i>Shared Insights
         </h1>
         <p class="community-subtitle">
-            Discover insights shared by our community
+            Explore AI-generated insights from the community
         </p>
         <p class="community-description">
             Explore AI-generated research and analysis on various topics from users around the world
@@ -21,19 +21,19 @@
         <!-- Filter Controls -->
         <div class="feed-controls">
             <div class="filter-tabs">
-                <a href="{{ url_for('main.community', sort='recent') }}"
+                <a href="{{ url_for('main.shared_insights', sort='recent') }}"
                    class="filter-tab {% if sort_by == 'recent' %}active{% endif %}">
                     <i class="fas fa-clock me-2"></i>Recent
                 </a>
-                <a href="{{ url_for('main.community', sort='trending') }}"
+                <a href="{{ url_for('main.shared_insights', sort='trending') }}"
                    class="filter-tab {% if sort_by == 'trending' %}active{% endif %}">
                     <i class="fas fa-fire me-2"></i>Trending
                 </a>
-                <a href="{{ url_for('main.community', sort='most_liked') }}"
+                <a href="{{ url_for('main.shared_insights', sort='most_liked') }}"
                    class="filter-tab {% if sort_by == 'most_liked' %}active{% endif %}">
                     <i class="fas fa-heart me-2"></i>Most Liked
                 </a>
-                <a href="{{ url_for('main.community', sort='featured') }}"
+                <a href="{{ url_for('main.shared_insights', sort='featured') }}"
                    class="filter-tab {% if sort_by == 'featured' %}active{% endif %}">
                     <i class="fas fa-star me-2"></i>Featured
                 </a>
@@ -113,7 +113,7 @@
                 <ul class="pagination">
                     {% if page > 1 %}
                     <li class="page-item">
-                        <a class="page-link" href="{{ url_for('main.community', sort=sort_by, page=page-1) }}">
+                        <a class="page-link" href="{{ url_for('main.shared_insights', sort=sort_by, page=page-1) }}">
                             <i class="fas fa-chevron-left"></i> Previous
                         </a>
                     </li>
@@ -126,7 +126,7 @@
                         </li>
                         {% elif p == 1 or p == total_pages or (p >= page - 2 and p <= page + 2) %}
                         <li class="page-item">
-                            <a class="page-link" href="{{ url_for('main.community', sort=sort_by, page=p) }}">{{ p }}</a>
+                            <a class="page-link" href="{{ url_for('main.shared_insights', sort=sort_by, page=p) }}">{{ p }}</a>
                         </li>
                         {% elif p == page - 3 or p == page + 3 %}
                         <li class="page-item disabled">
@@ -137,7 +137,7 @@
 
                     {% if page < total_pages %}
                     <li class="page-item">
-                        <a class="page-link" href="{{ url_for('main.community', sort=sort_by, page=page+1) }}">
+                        <a class="page-link" href="{{ url_for('main.shared_insights', sort=sort_by, page=page+1) }}">
                             Next <i class="fas fa-chevron-right"></i>
                         </a>
                     </li>
