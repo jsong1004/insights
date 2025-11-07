@@ -24,15 +24,37 @@ def create_app():
         """Convert URLs in text to clickable links"""
         if not text:
             return text
-        
+
         # Pattern to match URLs
         url_pattern = r'(https?://[^\s<>"]+)'
-        
+
         def replace_url(match):
             url = match.group(1)
             return f'<a href="{url}" target="_blank" rel="noopener noreferrer" class="source-link">{url} <span class="external-icon">↗</span></a>'
-        
+
         return re.sub(url_pattern, replace_url, text)
+
+    # Add custom Jinja2 filter for date formatting
+    @app.template_filter('format_date')
+    def format_date(timestamp_str):
+        """Convert ISO timestamp string to human-readable date format"""
+        if not timestamp_str:
+            return 'Unknown date'
+
+        try:
+            # Handle both ISO format with and without timezone
+            if 'Z' in timestamp_str:
+                dt = datetime.fromisoformat(timestamp_str.replace('Z', '+00:00'))
+            elif '+' in timestamp_str or timestamp_str.endswith(('00:00', '00')):
+                dt = datetime.fromisoformat(timestamp_str)
+            else:
+                # Assume it's a simple ISO format without timezone
+                dt = datetime.fromisoformat(timestamp_str)
+
+            return dt.strftime('%b %d, %Y')  # e.g., "Nov 07, 2025"
+        except (ValueError, AttributeError):
+            # Fallback: return first 10 characters (YYYY-MM-DD)
+            return timestamp_str[:10] if len(timestamp_str) >= 10 else 'Unknown date'
 
     # Initialize Firebase Authentication
     try:
