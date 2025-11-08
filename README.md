@@ -1,8 +1,29 @@
 # 🧠 AI Insights Generator - Flask Web App
 
-A powerful social web application that uses CrewAI's multi-agent system to generate intelligent insights on any topic. Users can sign up, log in, and share insights with the community while building their personal research library. Features comprehensive usage statistics tracking, automated session timeout management, and plan-based subscription limits.
+A powerful social web application that uses CrewAI's multi-agent system to generate intelligent insights on any topic. Users can sign up, log in, and share insights with the community while building their personal research library. Features comprehensive usage statistics tracking, automated session timeout management, and plan-based subscription limits with a modern, professional light theme design.
 
-**Latest Update (June 2025)**: Now featuring comprehensive usage statistics tracking with multi-tier subscription plans, automated 15-minute session timeout management, advanced search parameters with source type filtering (General, News, Finance & Business) and time range controls (None, Day, Week, Month, Year), enhanced error handling for search tool compatibility, robust fallback mechanisms, and a health check endpoint for monitoring. **NEW**: Interactive My Insights table with sortable columns (Title, Tokens, Date) replacing Recent Activity for better insights management. Running on Flask 3.1.1 with CrewAI 0.134.0 for enhanced performance, user management, and collaborative insights.
+**Latest Update (November 2025)**: Major UI/UX overhaul with modern light theme design (#F8FAFC background, #2563EB blue accents), consistent navigation across all pages, and critical Firestore integration fixes. Now featuring comprehensive usage statistics tracking with multi-tier subscription plans, automated 15-minute session timeout management, advanced search parameters with source type filtering (General, News, Finance & Business) and time range controls (None, Day, Week, Month, Year), enhanced error handling for search tool compatibility, robust fallback mechanisms, and a health check endpoint for monitoring. **NEW**: Interactive My Insights table with sortable columns (Title, Tokens, Date) replacing Recent Activity for better insights management. Running on Flask 3.1.1 with CrewAI 0.134.0 for enhanced performance, user management, and collaborative insights.
+
+## 🎨 Recent Updates (November 2025)
+
+### UI/UX Improvements
+- **Modern Light Theme**: Refreshed design with clean, professional color scheme
+  - Background: #F8FAFC (off-white / light gray) for better readability
+  - Primary Accent: #2563EB (vivid blue) for AI tech aesthetic
+  - Secondary Accent: #1E40AF (deep navy) for depth
+  - Text: #0F172A (dark slate) for optimal contrast
+- **Consistent Navigation**: Fixed navbar width consistency across all pages (Home, Insights, Generate, Dashboard)
+- **Complete Menu Links**: Added missing "Insights" link to Dashboard and Generate Insights pages
+- **Enhanced Visual Hierarchy**: Blue accent borders replace gradient backgrounds for cleaner look
+- **Professional Design**: Airy, easy-to-read layout with excellent contrast ratios
+
+### Critical Bug Fixes
+- **Firestore Integration**: Fixed circular import issue causing "Firestore unavailable" errors
+  - Profile updates now properly persist to database
+  - All authentication routes now correctly access Firestore manager
+  - Resolved 8 incorrect import patterns in auth routes
+- **Session Management**: Improved reliability of user data persistence
+- **Data Storage**: All social features, usage statistics, and user profiles now working correctly
 
 ## ✨ Features
 
@@ -36,14 +57,17 @@ A powerful social web application that uses CrewAI's multi-agent system to gener
 - **Enhanced Search Tool Compatibility**: Robust error handling with automatic fallback mechanisms
 
 ### 🎨 Modern Web Interface & UX (Flask 3.1.1)
+- **Modern Light Theme**: Professional design with clean color scheme for optimal readability
+- **Consistent Navigation**: Uniform navbar layout and menu structure across all pages
 - **Enhanced Loading States**: Interactive buttons with "Generating Insights..." feedback
 - **Real-time Processing**: Live updates during insight generation with progress indicators
 - **Form Protection**: Prevents double submissions and accidental data loss
 - **Authentication-Aware Navigation**: Dynamic navigation based on user login status
 - **Responsive Design**: Works seamlessly on desktop, tablet, and mobile devices
 - **Interactive Sidebar**: Browse and manage previous insights with social indicators
-- **Beautiful UI**: Modern gradient design with smooth animations and accessibility features
+- **Beautiful UI**: Airy, professional design with blue accent borders and smooth animations
 - **Enhanced Security**: Latest Flask security features with Firebase authentication
+- **Excellent Contrast**: Dark slate text on light background for easy reading
 
 ### 📊 Usage Statistics & Analytics
 - **Comprehensive Tracking**: Multi-level usage metrics (daily, monthly, total)
@@ -459,19 +483,21 @@ All features have been thoroughly tested:
 7. **Social Features**: ✅ Like system and privacy controls functional
 8. **Public Sharing**: ✅ Guest access to community insights
 9. **Protected Routes**: ✅ Login requirements properly enforced
-10. **Web Interface**: ✅ Responsive UI with authentication integration
+10. **Web Interface**: ✅ Responsive UI with modern light theme and consistent navigation
 11. **Insight Generation**: ✅ Multi-agent AI with user attribution and search guidance
-12. **Firestore Storage**: ✅ User data, social features, and search parameters persisted
-13. **Error Handling**: ✅ Comprehensive error recovery and user feedback
-14. **Loading States**: ✅ Interactive buttons with progress feedback
-15. **Form Protection**: ✅ Double-submission prevention and validation
-16. **Docker Deployment**: ✅ Containerized deployment working
-17. **Health Monitoring**: ✅ System status endpoint for monitoring
-18. **Dependency Management**: ✅ All required packages properly installed
-19. **Usage Dashboard**: ✅ Real-time analytics with visual progress tracking
-20. **Plan-based Limits**: ✅ Quota enforcement and proactive warnings
-21. **My Insights Table**: ✅ Interactive sortable table with column sorting functionality
-22. **Insights Management**: ✅ View, sort, and manage user insights efficiently
+12. **Firestore Storage**: ✅ User data, social features, and search parameters persisted correctly
+13. **Firestore Integration**: ✅ Fixed circular import issue - profile updates now working properly
+14. **Error Handling**: ✅ Comprehensive error recovery and user feedback
+15. **Loading States**: ✅ Interactive buttons with progress feedback
+16. **Form Protection**: ✅ Double-submission prevention and validation
+17. **Docker Deployment**: ✅ Containerized deployment working
+18. **Health Monitoring**: ✅ System status endpoint for monitoring
+19. **Dependency Management**: ✅ All required packages properly installed
+20. **Usage Dashboard**: ✅ Real-time analytics with visual progress tracking
+21. **Plan-based Limits**: ✅ Quota enforcement and proactive warnings
+22. **My Insights Table**: ✅ Interactive sortable table with column sorting functionality
+23. **Insights Management**: ✅ View, sort, and manage user insights efficiently
+24. **UI/UX Consistency**: ✅ Consistent navbar width and menu structure across all pages
 
 ### Authentication Testing
 - [x] Email/password registration and login
@@ -536,7 +562,26 @@ All features have been thoroughly tested:
 - [x] Responsive table design on all screen sizes
 - [x] User-specific data filtering (author_id based)
 
-## 🆘 Troubleshooting (Updated June 2025)
+### UI/UX Consistency Testing
+- [x] Modern light theme applied across all pages
+- [x] Navbar width consistency (Home, Insights, Generate, Dashboard)
+- [x] Navigation menu structure uniform across all pages
+- [x] "Insights" link present on all pages
+- [x] Color scheme consistency (#F8FAFC background, #2563EB blue accents)
+- [x] Text contrast and readability optimized
+- [x] Blue accent borders replacing gradient backgrounds
+- [x] Professional, airy design maintained throughout
+
+### Firestore Integration Testing
+- [x] Profile updates properly persist to database
+- [x] Circular import issue resolved in auth routes
+- [x] All 8 auth routes using correct Firestore access pattern
+- [x] Login/signup user data creation working
+- [x] Dashboard data loading correctly
+- [x] Session management with proper Firestore integration
+- [x] Activity tracking and usage statistics persisting
+
+## 🆘 Troubleshooting (Updated November 2025)
 
 ### Common Issues
 
@@ -575,6 +620,8 @@ All features have been thoroughly tested:
 - **Secret Manager errors**: Verify Google Cloud project permissions
 - **Firestore write errors**: Check database rules and authentication
 - **Index errors**: Follow the provided URL to create required Firestore indexes
+- **"Profile updated (not persisted - Firestore unavailable)"**: ✅ FIXED - This was caused by circular import issue, now resolved
+- **Firestore connection working but showing unavailable**: Ensure using `current_app.extensions.get('firestore_manager')` pattern
 
 #### "OpenAI API key is required"
 - Ensure `OPENAI_API_KEY` is set correctly in `.env`
@@ -653,4 +700,4 @@ All features have been thoroughly tested:
 
 **Powered by Firebase Authentication, CrewAI 0.134.0 Multi-Agent System, Flask 3.1.1 & Docker** 🔐🤖✨🐳
 
-*Last Updated: June 2025 - Now featuring advanced search parameters with source type filtering (General, News, Finance & Business) and time range controls, enhanced search tool error handling with robust fallback mechanisms, health monitoring endpoint, interactive My Insights table with sortable columns for better insights management, and production-ready infrastructure for collaborative AI insights generation.* 
+*Last Updated: November 2025 - Now featuring modern light theme design with professional color scheme, consistent navigation across all pages, critical Firestore integration fixes for proper data persistence, advanced search parameters with source type filtering (General, News, Finance & Business) and time range controls, enhanced search tool error handling with robust fallback mechanisms, health monitoring endpoint, interactive My Insights table with sortable columns for better insights management, and production-ready infrastructure for collaborative AI insights generation.* 
