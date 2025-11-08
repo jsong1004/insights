@@ -1,5 +1,7 @@
 {% extends "base.html" %}
 
+{% block body_attrs %} data-page="home"{% endblock %}
+
 {% block title %}AI Insights Generator - Discover Powerful AI-Generated Insights{% endblock %}
 
 {% block content %}
@@ -55,57 +57,8 @@
     <div class="main-content">
                 <div class="container">
             <div class="row">
-                <!-- Main Content: How It Works & Example Topics -->
+                <!-- Main Content: Example Topics -->
                 <div class="col-12">
-                    <!-- How It Works -->
-                    <div class="how-it-works mb-5">
-                        <div class="section-header">
-                            <h2><i class="fas fa-cogs me-2"></i>How It Works</h2>
-                        </div>
-                        
-                        <div class="steps-container">
-                            <div class="step-item">
-                                <div class="step-icon research">
-                                    <i class="fas fa-search"></i>
-                                </div>
-                                <div class="step-content">
-                                    <h5>1. Research</h5>
-                                    <p>AI Research Agent searches for comprehensive, up-to-date information on your topic</p>
-                                </div>
-                            </div>
-                            
-                            <div class="step-item">
-                                <div class="step-icon validate">
-                                    <i class="fas fa-shield-alt"></i>
-                                </div>
-                                <div class="step-content">
-                                    <h5>2. Validate</h5>
-                                    <p>Validation Agent checks source credibility and assigns confidence scores</p>
-                                </div>
-                            </div>
-                            
-                            <div class="step-item">
-                                <div class="step-icon analyze">
-                                    <i class="fas fa-lightbulb"></i>
-                                </div>
-                                <div class="step-content">
-                                    <h5>3. Analyze</h5>
-                                    <p>Insights Agent creates meaningful analysis and actionable intelligence</p>
-                                </div>
-                            </div>
-                            
-                            <div class="step-item">
-                                <div class="step-icon present">
-                                    <i class="fas fa-chart-line"></i>
-                                </div>
-                                <div class="step-content">
-                                    <h5>4. Present</h5>
-                                    <p>Structured insights with sources, confidence scores, and practical applications</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
                     <!-- Example Topics -->
                     <div class="example-topics">
                         <div class="section-header">

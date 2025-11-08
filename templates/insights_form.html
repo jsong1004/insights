@@ -1,5 +1,7 @@
 {% extends "base_auth.html" %}
 
+{% block body_attrs %} data-page="insights-form"{% endblock %}
+
 {% block title %}Generate AI Insights - AI Insights Generator{% endblock %}
 
 {% block content %}
@@ -247,21 +249,7 @@ checkUsageLimits();
             });
         }
         
-        // Example topic click handlers
-        document.querySelectorAll('.clickable-topic').forEach(function(item) {
-            item.style.cursor = 'pointer';
-            item.addEventListener('click', function() {
-                const topicText = this.textContent.replace(/^\s*\S+\s*/, ''); // Remove the chevron icon
-                if (topicInput) {
-                    topicInput.value = topicText.trim();
-                    topicInput.focus();
-                    topicInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    
-                    // Trigger input event to update character counter
-                    topicInput.dispatchEvent(new Event('input'));
-                }
-            });
-        });
+
         
         // Handle page visibility change to hide loading state if user navigates away and back
         document.addEventListener('visibilitychange', function() {

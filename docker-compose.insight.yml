@@ -42,6 +42,8 @@ services:
       - ./logs:/app/logs
       # Mount Firebase service account key if using file-based auth
       - ./service-account-key.json:/app/service-account-key.json:ro
+      # Optional: Mount built assets for development (comment out for production)
+      # - ./static/dist:/app/static/dist:ro
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:5000/status', timeout=10)"]

@@ -23,6 +23,7 @@ ENV/
 # Environment Variables
 .env
 .env.*
+.env.local
 .envrc
 
 # Firebase/Google Cloud Credentials
@@ -41,10 +42,12 @@ instance/
 *.log
 logs/
 
-# Node/npm (if any frontend)
+# Node/npm (frontend build system)
 node_modules/
 yarn.lock
 package-lock.json
+.vite/
+.turbo/
 
 # Build
 lib/
@@ -67,6 +70,10 @@ htmlcov/
 # Misc
 *.bak
 *.tmp
+pglite-debug.log
+
+# Python package artifacts
+share/
 
 # Ignore downloads and reports
 downloads/

@@ -350,82 +350,270 @@ class FirestoreManager:
             shared_insights.sort(key=lambda x: getattr(x, 'likes', 0), reverse=True)
             return shared_insights[:limit]
 
-    def toggle_like(self, insight_id: str, user_id: str) -> bool:
-        """Toggle like for an insight by a user"""
+    def add_like(self, insight_id, user_id):
+        """Add a like to an insight (one-time only)"""
         try:
-            if self.use_firestore and self.db:
-                doc_ref = self.db.collection(FIRESTORE_COLLECTION).document(insight_id)
-                
-                @firestore.transactional
-                def update_likes(transaction):
-                    doc = doc_ref.get(transaction=transaction)
-                    if doc.exists:
-                        data = doc.to_dict()
-                        liked_by = data.get('liked_by', [])
-                        likes = data.get('likes', 0)
-                        
-                        if user_id in liked_by:
-                            liked_by.remove(user_id)
-                            likes = max(0, likes - 1)
-                        else:
-                            liked_by.append(user_id)
-                            likes += 1
-                        
-                        transaction.update(doc_ref, {
-                            'liked_by': liked_by,
-                            'likes': likes,
-                            'updated_at': firestore.SERVER_TIMESTAMP
-                        })
-                        
-                        if insight_id in insights_storage:
-                            insights_storage[insight_id].liked_by = liked_by
-                            insights_storage[insight_id].likes = likes
-                        
-                        return True
-                    return False
-                
-                transaction = self.db.transaction()
-                return update_likes(transaction)
+            insight_ref = self.db.collection('insights').document(insight_id)
             
+            # Use transaction to ensure atomicity
+            @firestore.transactional
+            def add_like_transaction(transaction):
+                # Get current insight data
+                insight_doc = insight_ref.get(transaction=transaction)
+                if not insight_doc.exists:
+                    return None
+                
+                insight_data = insight_doc.to_dict()
+                
+                # Check if user already liked
+                liked_by = insight_data.get('liked_by', [])
+                if user_id in liked_by:
+                    return None  # User already liked this insight
+                
+                # Add user to liked_by list and increment likes count
+                liked_by.append(user_id)
+                likes_count = insight_data.get('likes', 0) + 1
+                
+                # Update the document
+                transaction.update(insight_ref, {
+                    'liked_by': liked_by,
+                    'likes': likes_count
+                })
+                
+                # Return updated data
+                insight_data['liked_by'] = liked_by
+                insight_data['likes'] = likes_count
+                return insight_data
+            
+            # Execute transaction
+            transaction = self.db.transaction()
+            result = add_like_transaction(transaction)
+            
+            if result:
+                print(f"Successfully added like to insight {insight_id} by user {user_id}")
+                return result
             else:
-                if insight_id in insights_storage:
-                    insight = insights_storage[insight_id]
-                    if user_id in insight.liked_by:
-                        insight.liked_by.remove(user_id)
-                        insight.likes = max(0, insight.likes - 1)
-                    else:
-                        insight.liked_by.append(user_id)
-                        insight.likes += 1
-                    return True
-                return False
+                print(f"Failed to add like - user {user_id} already liked insight {insight_id}")
+                return None
                 
         except Exception as e:
-            logger.error(f"Error toggling like for insight {insight_id}: {e}")
+            print(f"Error adding like to insight {insight_id}: {str(e)}")
+            return None
+
+    def toggle_like(self, insight_id, user_id):
+        """Toggle like for an insight (deprecated - use add_like for one-time likes)"""
+        try:
+            insight_ref = self.db.collection('insights').document(insight_id)
+            
+            # Use transaction to ensure atomicity
+            @firestore.transactional
+            def toggle_like_transaction(transaction):
+                # Get current insight data
+                insight_doc = insight_ref.get(transaction=transaction)
+                if not insight_doc.exists:
+                    return False
+                
+                insight_data = insight_doc.to_dict()
+                
+                # Get current liked_by list
+                liked_by = insight_data.get('liked_by', [])
+                likes_count = insight_data.get('likes', 0)
+                
+                if user_id in liked_by:
+                    # Remove like
+                    liked_by.remove(user_id)
+                    likes_count = max(0, likes_count - 1)
+                else:
+                    # Add like
+                    liked_by.append(user_id)
+                    likes_count += 1
+                
+                # Update the document
+                transaction.update(insight_ref, {
+                    'liked_by': liked_by,
+                    'likes': likes_count
+                })
+                
+                return True
+            
+            # Execute transaction
+            transaction = self.db.transaction()
+            return toggle_like_transaction(transaction)
+            
+        except Exception as e:
+            print(f"Error toggling like for insight {insight_id}: {str(e)}")
             return False
+
+    def toggle_dislike(self, insight_id, user_id):
+        """Toggle dislike for an insight (deprecated - dislike functionality removed)"""
+        print(f"Dislike functionality has been removed")
+        return False
+
+    def get_trending_insights(self, limit: int = 10) -> List[GeneratedInsights]:
+        """Get trending insights based on recent activity (likes/dislikes in past 24-48 hours)"""
+        from datetime import datetime, timedelta
+        
+        trending_insights = []
+        
+        try:
+            # Calculate trending score based on recent activity
+            now = datetime.now()
+            two_days_ago = now - timedelta(days=2)
+            
+            if self.use_firestore and self.db:
+                # Get recent shared insights
+                docs = self.db.collection(FIRESTORE_COLLECTION)\
+                    .where('is_shared', '==', True)\
+                    .where('created_at', '>=', two_days_ago)\
+                    .stream()
+                
+                for doc in docs:
+                    try:
+                        data = doc.to_dict()
+                        data.pop('created_at', None)
+                        data.pop('updated_at', None)
+                        
+                        insights = GeneratedInsights(**data)
+                        trending_insights.append(insights)
+                        
+                    except Exception as e:
+                        logger.warning(f"Error parsing trending insight document {doc.id}: {e}")
+                        continue
+            
+            # Add insights from memory
+            for insight_id, insights in insights_storage.items():
+                if (insights.is_shared and 
+                    not any(i.id == insight_id for i in trending_insights)):
+                    try:
+                        if isinstance(insights.timestamp, str):
+                            insight_date = datetime.fromisoformat(insights.timestamp.replace('Z', '+00:00'))
+                        else:
+                            insight_date = insights.timestamp
+                        
+                        if insight_date >= two_days_ago:
+                            trending_insights.append(insights)
+                    except Exception as e:
+                        logger.warning(f"Error parsing timestamp for trending insight {insight_id}: {e}")
+                        # Include recent ones anyway
+                        trending_insights.append(insights)
+            
+            # Calculate trending score: (likes - dislikes) / hours_since_creation
+            def calculate_trending_score(insight):
+                try:
+                    likes = getattr(insight, 'likes', 0) or 0
+                    dislikes = getattr(insight, 'dislikes', 0) or 0
+                    
+                    if isinstance(insight.timestamp, str):
+                        created_date = datetime.fromisoformat(insight.timestamp.replace('Z', '+00:00'))
+                    else:
+                        created_date = insight.timestamp
+                    
+                    hours_since = max(1, (now - created_date).total_seconds() / 3600)  # Minimum 1 hour
+                    
+                    # Trending score: engagement rate adjusted by time decay
+                    engagement = likes - (dislikes * 0.5)  # Dislikes have less negative impact
+                    score = max(0, engagement) / (hours_since ** 0.5)  # Square root decay
+                    
+                    return score
+                except Exception as e:
+                    logger.warning(f"Error calculating trending score for insight {insight.id}: {e}")
+                    return 0
+            
+            # Sort by trending score
+            trending_insights.sort(key=calculate_trending_score, reverse=True)
+            
+            return trending_insights[:limit]
+            
+        except Exception as e:
+            logger.error(f"Error retrieving trending insights: {e}")
+            # Fallback: return most recent shared insights
+            shared_insights = self.get_shared_insights()
+            return shared_insights[:limit]
+
+    def get_most_liked_insights(self, limit: int = 10) -> List[GeneratedInsights]:
+        """Get most liked insights"""
+        try:
+            most_liked = []
+            
+            if self.use_firestore and self.db:
+                # Get all shared insights first (simpler query without composite index)
+                docs = self.db.collection(FIRESTORE_COLLECTION)\
+                    .where('is_shared', '==', True)\
+                    .stream()
+                
+                # Filter and sort in Python to avoid needing composite index
+                firestore_insights = []
+                for doc in docs:
+                    try:
+                        data = doc.to_dict()
+                        likes = data.get('likes', 0) or 0
+                        
+                        # Only include insights with likes > 0
+                        if likes > 0:
+                            data.pop('created_at', None)
+                            data.pop('updated_at', None)
+                            
+                            insights = GeneratedInsights(**data)
+                            firestore_insights.append(insights)
+                            
+                    except Exception as e:
+                        logger.warning(f"Error parsing most liked insight document {doc.id}: {e}")
+                        continue
+                
+                # Sort by likes in Python
+                firestore_insights.sort(key=lambda x: getattr(x, 'likes', 0), reverse=True)
+                most_liked.extend(firestore_insights[:limit])
+            
+            # Supplement with memory storage if needed
+            if len(most_liked) < limit:
+                memory_insights = []
+                for insight_id, insights in insights_storage.items():
+                    if (insights.is_shared and 
+                        getattr(insights, 'likes', 0) > 0 and
+                        not any(i.id == insight_id for i in most_liked)):
+                        memory_insights.append(insights)
+                
+                # Sort by likes
+                memory_insights.sort(key=lambda x: getattr(x, 'likes', 0), reverse=True)
+                remaining_needed = limit - len(most_liked)
+                most_liked.extend(memory_insights[:remaining_needed])
+            
+            # Final sort to ensure proper ordering
+            most_liked.sort(key=lambda x: getattr(x, 'likes', 0), reverse=True)
+            
+            return most_liked[:limit]
+            
+        except Exception as e:
+            logger.error(f"Error retrieving most liked insights: {e}")
+            # Fallback: return shared insights sorted by likes from memory
+            shared_insights = [insights for insights in insights_storage.values() 
+                             if insights.is_shared and getattr(insights, 'likes', 0) > 0]
+            shared_insights.sort(key=lambda x: getattr(x, 'likes', 0), reverse=True)
+            return shared_insights[:limit]
 
     def update_sharing_status(self, insight_id: str, is_shared: bool, user_id: str) -> bool:
         """Update the sharing status of an insight"""
         try:
             if self.use_firestore and self.db:
                 doc_ref = self.db.collection(FIRESTORE_COLLECTION).document(insight_id)
-                
+
                 doc = doc_ref.get()
                 if doc.exists:
                     data = doc.to_dict()
                     if data.get('author_id') != user_id:
                         logger.warning(f"User {user_id} attempted to modify insight {insight_id} they don't own")
                         return False
-                    
+
                     doc_ref.update({
                         'is_shared': is_shared,
                         'updated_at': firestore.SERVER_TIMESTAMP
                     })
-                    
+
                     if insight_id in insights_storage:
                         insights_storage[insight_id].is_shared = is_shared
-                    
+
                     return True
-            
+
             else:
                 if insight_id in insights_storage:
                     insight = insights_storage[insight_id]
@@ -433,7 +621,283 @@ class FirestoreManager:
                         insight.is_shared = is_shared
                         return True
                 return False
-                
+
         except Exception as e:
             logger.error(f"Error updating sharing status for insight {insight_id}: {e}")
             return False
+
+    def get_community_insights(self, sort_by='recent', page=1, per_page=12) -> List[GeneratedInsights]:
+        """Get paginated community insights with sorting"""
+        try:
+            if not self.use_firestore or not self.db:
+                # Fallback to in-memory storage
+                shared_insights = [insights for insights in insights_storage.values() if insights.is_shared]
+                return self._sort_and_paginate_insights(shared_insights, sort_by, page, per_page)
+
+            # Build Firestore query
+            query = self.db.collection(FIRESTORE_COLLECTION).where('is_shared', '==', True)
+
+            # Apply sorting
+            if sort_by == 'likes':
+                query = query.order_by('likes', direction=firestore.Query.DESCENDING)
+            elif sort_by == 'pinned':
+                query = query.order_by('is_pinned', direction=firestore.Query.DESCENDING)\
+                             .order_by('created_at', direction=firestore.Query.DESCENDING)
+            else:  # recent
+                query = query.order_by('created_at', direction=firestore.Query.DESCENDING)
+
+            # Apply pagination
+            offset = (page - 1) * per_page
+            docs = query.offset(offset).limit(per_page).stream()
+
+            insights_list = []
+            for doc in docs:
+                try:
+                    data = doc.to_dict()
+                    data.pop('created_at', None)
+                    data.pop('updated_at', None)
+
+                    insights = GeneratedInsights(**data)
+                    insights_list.append(insights)
+
+                except Exception as e:
+                    logger.warning(f"Error parsing community insight document {doc.id}: {e}")
+                    continue
+
+            return insights_list
+
+        except Exception as e:
+            logger.error(f"Error retrieving community insights: {e}")
+            return []
+
+    def get_community_insights_count(self) -> int:
+        """Get total count of shared insights"""
+        try:
+            if not self.use_firestore or not self.db:
+                return len([insights for insights in insights_storage.values() if insights.is_shared])
+
+            query = self.db.collection(FIRESTORE_COLLECTION).where('is_shared', '==', True)
+            return len(list(query.stream()))
+
+        except Exception as e:
+            logger.error(f"Error counting community insights: {e}")
+            return 0
+
+    def search_community_insights(self, query: str, sort_by='recent', page=1, per_page=12) -> List[GeneratedInsights]:
+        """Search shared insights by topic or content"""
+        try:
+            if not self.use_firestore or not self.db:
+                # Fallback search in memory
+                shared_insights = [insights for insights in insights_storage.values()
+                                 if insights.is_shared and
+                                 (query.lower() in insights.topic.lower() or
+                                  any(query.lower() in insight.title.lower() for insight in insights.insights))]
+                return self._sort_and_paginate_insights(shared_insights, sort_by, page, per_page)
+
+            # For Firestore, we'll do a simple topic search first
+            # Note: Full-text search would require additional setup
+            base_query = self.db.collection(FIRESTORE_COLLECTION).where('is_shared', '==', True)
+
+            # Search in topic field (case-insensitive search requires some workarounds in Firestore)
+            # This is a simplified approach - for production, consider using Algolia or Elasticsearch
+            all_docs = base_query.stream()
+
+            filtered_insights = []
+            for doc in all_docs:
+                try:
+                    data = doc.to_dict()
+
+                    # Check if query matches topic or any insight content
+                    if (query.lower() in data.get('topic', '').lower() or
+                        any(query.lower() in insight.get('title', '').lower()
+                            for insight in data.get('insights', []))):
+
+                        data.pop('created_at', None)
+                        data.pop('updated_at', None)
+                        insights = GeneratedInsights(**data)
+                        filtered_insights.append(insights)
+
+                except Exception as e:
+                    logger.warning(f"Error parsing search result {doc.id}: {e}")
+                    continue
+
+            return self._sort_and_paginate_insights(filtered_insights, sort_by, page, per_page)
+
+        except Exception as e:
+            logger.error(f"Error searching community insights: {e}")
+            return []
+
+    def get_search_results_count(self, query: str) -> int:
+        """Get count of search results"""
+        try:
+            if not self.use_firestore or not self.db:
+                return len([insights for insights in insights_storage.values()
+                           if insights.is_shared and
+                           (query.lower() in insights.topic.lower() or
+                            any(query.lower() in insight.title.lower() for insight in insights.insights))])
+
+            # Similar search logic as above but just counting
+            base_query = self.db.collection(FIRESTORE_COLLECTION).where('is_shared', '==', True)
+            all_docs = base_query.stream()
+
+            count = 0
+            for doc in all_docs:
+                try:
+                    data = doc.to_dict()
+                    if (query.lower() in data.get('topic', '').lower() or
+                        any(query.lower() in insight.get('title', '').lower()
+                            for insight in data.get('insights', []))):
+                        count += 1
+                except Exception as e:
+                    continue
+
+            return count
+
+        except Exception as e:
+            logger.error(f"Error counting search results: {e}")
+            return 0
+
+    def update_pin_status(self, insight_id: str, is_pinned: bool, admin_user_id: str) -> bool:
+        """Update pinned status of an insight (admin only)"""
+        try:
+            if not self.use_firestore or not self.db:
+                if insight_id in insights_storage:
+                    insights_storage[insight_id].is_pinned = is_pinned
+                    return True
+                return False
+
+            doc_ref = self.db.collection(FIRESTORE_COLLECTION).document(insight_id)
+            doc = doc_ref.get()
+
+            if doc.exists:
+                doc_ref.update({
+                    'is_pinned': is_pinned,
+                    'pinned_by': admin_user_id if is_pinned else None,
+                    'pinned_at': firestore.SERVER_TIMESTAMP if is_pinned else None,
+                    'updated_at': firestore.SERVER_TIMESTAMP
+                })
+
+                # Update in-memory storage too
+                if insight_id in insights_storage:
+                    insights_storage[insight_id].is_pinned = is_pinned
+
+                return True
+
+            return False
+
+        except Exception as e:
+            logger.error(f"Error updating pin status for insight {insight_id}: {e}")
+            return False
+
+    def get_community_stats(self) -> dict:
+        """Get community statistics"""
+        try:
+            if not self.use_firestore or not self.db:
+                shared_insights = [insights for insights in insights_storage.values() if insights.is_shared]
+                return {
+                    'total_insights': len(shared_insights),
+                    'total_likes': sum(getattr(insights, 'likes', 0) for insights in shared_insights),
+                    'total_authors': len(set(insights.author_id for insights in shared_insights if insights.author_id)),
+                    'trending_topics': []
+                }
+
+            # Get all shared insights
+            docs = self.db.collection(FIRESTORE_COLLECTION).where('is_shared', '==', True).stream()
+
+            total_insights = 0
+            total_likes = 0
+            authors = set()
+            topics = {}
+
+            for doc in docs:
+                try:
+                    data = doc.to_dict()
+                    total_insights += 1
+                    total_likes += data.get('likes', 0)
+
+                    if data.get('author_id'):
+                        authors.add(data['author_id'])
+
+                    # Count topic frequencies
+                    topic = data.get('topic', '').lower().strip()
+                    if topic:
+                        topics[topic] = topics.get(topic, 0) + 1
+
+                except Exception as e:
+                    continue
+
+            # Get top topics
+            trending_topics = sorted(topics.items(), key=lambda x: x[1], reverse=True)[:5]
+
+            return {
+                'total_insights': total_insights,
+                'total_likes': total_likes,
+                'total_authors': len(authors),
+                'trending_topics': [{'topic': topic, 'count': count} for topic, count in trending_topics]
+            }
+
+        except Exception as e:
+            logger.error(f"Error getting community stats: {e}")
+            return {
+                'total_insights': 0,
+                'total_likes': 0,
+                'total_authors': 0,
+                'trending_topics': []
+            }
+
+    def get_trending_topics(self, limit=10) -> List[dict]:
+        """Get trending topics from recent insights"""
+        try:
+            from datetime import datetime, timedelta
+
+            # Get insights from last 7 days
+            one_week_ago = datetime.now() - timedelta(days=7)
+
+            if not self.use_firestore or not self.db:
+                recent_insights = [insights for insights in insights_storage.values()
+                                 if insights.is_shared]
+                topics = {}
+                for insights in recent_insights:
+                    topic = insights.topic.lower().strip()
+                    if topic:
+                        topics[topic] = topics.get(topic, 0) + 1
+            else:
+                query = self.db.collection(FIRESTORE_COLLECTION)\
+                             .where('is_shared', '==', True)\
+                             .where('created_at', '>=', one_week_ago)\
+                             .stream()
+
+                topics = {}
+                for doc in query:
+                    try:
+                        data = doc.to_dict()
+                        topic = data.get('topic', '').lower().strip()
+                        if topic:
+                            topics[topic] = topics.get(topic, 0) + 1
+                    except Exception as e:
+                        continue
+
+            # Sort by frequency and return top topics
+            trending = sorted(topics.items(), key=lambda x: x[1], reverse=True)[:limit]
+
+            return [{'topic': topic.title(), 'count': count} for topic, count in trending]
+
+        except Exception as e:
+            logger.error(f"Error getting trending topics: {e}")
+            return []
+
+    def _sort_and_paginate_insights(self, insights_list: List[GeneratedInsights], sort_by: str, page: int, per_page: int) -> List[GeneratedInsights]:
+        """Helper method to sort and paginate insights"""
+        # Sort insights
+        if sort_by == 'likes':
+            insights_list.sort(key=lambda x: getattr(x, 'likes', 0), reverse=True)
+        elif sort_by == 'pinned':
+            insights_list.sort(key=lambda x: (getattr(x, 'is_pinned', False), x.timestamp), reverse=True)
+        else:  # recent
+            insights_list.sort(key=lambda x: x.timestamp, reverse=True)
+
+        # Apply pagination
+        start_idx = (page - 1) * per_page
+        end_idx = start_idx + per_page
+
+        return insights_list[start_idx:end_idx]

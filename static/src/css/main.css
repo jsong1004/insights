@@ -1,0 +1,13 @@
+/**
+ * Main CSS Entry Point
+ * AI Insights Frontend Application
+ *
+ * This file imports all CSS modules in the correct order.
+ */
+
+/* Base Styles */
+@import './base/variables.css';
+@import './base/reset.css';
+
+/* Page-Specific Styles */
+@import './pages/community.css';
