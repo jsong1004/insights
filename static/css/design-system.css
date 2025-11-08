@@ -18,7 +18,7 @@
   --primary-400: #60a5fa;
   --primary-500: #3b82f6;  /* Main primary */
   --primary-600: #2563eb;
-  --primary-700: #1d4ed8;
+  --primary-700: #1E40AF;
   --primary-800: #1e40af;
   --primary-900: #1e3a8a;
 
@@ -72,16 +72,16 @@
   --gray-900: #111827;
 
   /* Text Colors */
-  --text-primary:   #111827;
-  --text-secondary: #4b5563;
-  --text-tertiary:  #6b7280;
+  --text-primary:   #0F172A;
+  --text-secondary: #475569;
+  --text-tertiary:  #64748b;
   --text-disabled:  #9ca3af;
   --text-inverse:   #ffffff;
 
   /* Background Colors */
-  --bg-primary:   #ffffff;
-  --bg-secondary: #f9fafb;
-  --bg-tertiary:  #f3f4f6;
+  --bg-primary:   #F8FAFC;
+  --bg-secondary: #F8FAFC;
+  --bg-tertiary:  #F1F5F9;
   --bg-overlay:   rgba(17, 24, 39, 0.5);
 
   /* Typography */

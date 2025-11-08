@@ -64,10 +64,11 @@ body {
 }
 
 .sidebar-header {
-  background: linear-gradient(135deg, var(--primary-600) 0%, var(--primary-700) 100%);
-  color: var(--text-inverse);
+  background: var(--bg-primary);
+  color: var(--text-primary);
   padding: var(--space-6);
   font-weight: var(--font-semibold);
+  border-bottom: 3px solid var(--primary-600);
 }
 
 /* ============================================
@@ -100,17 +101,18 @@ body {
    ============================================ */
 
 .hero-section {
-  background: linear-gradient(135deg, var(--primary-600) 0%, var(--primary-700) 100%);
-  color: var(--text-inverse);
+  background: var(--bg-primary);
+  color: var(--text-primary);
   padding: var(--space-16) 0;
   text-align: center;
+  border-bottom: 3px solid var(--primary-600);
 }
 
 .hero-title {
   font-size: var(--text-5xl);
   font-weight: var(--font-bold);
   margin-bottom: var(--space-4);
-  color: var(--text-inverse);
+  color: var(--text-primary);
 }
 
 .hero-subtitle {
@@ -159,10 +161,11 @@ body {
    ============================================ */
 
 .insights-header {
-  background: linear-gradient(135deg, var(--primary-600) 0%, var(--primary-700) 100%);
-  color: var(--text-inverse);
+  background: var(--bg-primary);
+  color: var(--text-primary);
   padding: var(--space-8) 0;
   margin-bottom: var(--space-8);
+  border-bottom: 3px solid var(--primary-600);
 }
 
 .insights-form {
@@ -224,10 +227,11 @@ body {
 }
 
 .community-header {
-  background: linear-gradient(135deg, var(--primary-600) 0%, var(--primary-700) 100%);
-  color: var(--text-inverse);
+  background: var(--bg-primary);
+  color: var(--text-primary);
   padding: var(--space-12) 0;
   margin-bottom: var(--space-8);
+  border-bottom: 3px solid var(--primary-600);
 }
 
 .community-title {
@@ -412,7 +416,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, var(--primary-600) 0%, var(--primary-700) 100%);
+  background: var(--bg-primary);
   padding: var(--space-8) var(--space-4);
 }
 
