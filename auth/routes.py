@@ -45,18 +45,18 @@ def api_login():
         logger.info(f"User login successful: {decoded_token['uid']}")
         
         # Update last login in Firestore (if available)
-        try:
-            from app import firestore_manager
+        firestore_manager = current_app.extensions.get('firestore_manager')
+        if firestore_manager and firestore_manager.use_firestore:
             firestore_manager.update_user_login(decoded_token['uid'])
-            
+
             # Track login activity
             firestore_manager.track_activity(
-                decoded_token['uid'], 
-                'login', 
+                decoded_token['uid'],
+                'login',
                 'User logged in',
                 {'email': decoded_token.get('email')}
             )
-        except ImportError:
+        else:
             logger.warning("Firestore manager not available - skipping login tracking")
         
         return jsonify({
@@ -99,9 +99,8 @@ def api_signup():
         logger.info(f"New user signup: {decoded_token['uid']}")
         
         # Initialize user in Firestore (if available)
-        try:
-            from app import firestore_manager
-            
+        firestore_manager = current_app.extensions.get('firestore_manager')
+        if firestore_manager and firestore_manager.use_firestore:
             user_data = {
                 'email': decoded_token.get('email'),
                 'email_verified': decoded_token.get('email_verified', False),
@@ -120,17 +119,17 @@ def api_signup():
                     'last_reset': datetime.now()
                 }
             }
-            
+
             firestore_manager.create_user(decoded_token['uid'], user_data)
-            
+
             # Track signup activity
             firestore_manager.track_activity(
-                decoded_token['uid'], 
-                'signup', 
+                decoded_token['uid'],
+                'signup',
                 'User signed up',
                 {'email': decoded_token.get('email')}
             )
-        except ImportError:
+        else:
             logger.warning("Firestore manager not available - skipping user data initialization")
         
         return jsonify({
@@ -154,14 +153,14 @@ def api_logout():
     
     # Track logout activity before clearing session
     if user_id:
-        try:
-            from app import firestore_manager
+        firestore_manager = current_app.extensions.get('firestore_manager')
+        if firestore_manager and firestore_manager.use_firestore:
             firestore_manager.track_activity(
-                user_id, 
-                'logout', 
+                user_id,
+                'logout',
                 'User logged out'
             )
-        except ImportError:
+        else:
             logger.warning("Firestore manager not available - skipping logout tracking")
     
     session.clear()
@@ -173,11 +172,11 @@ def get_current_user():
     """Get current user info"""
     if 'user_id' not in session:
         return jsonify({'error': 'Not authenticated'}), 401
-    
-    try:
-        from app import firestore_manager
+
+    firestore_manager = current_app.extensions.get('firestore_manager')
+    if firestore_manager and firestore_manager.use_firestore:
         user_data = firestore_manager.get_user_data(session['user_id'])
-    except ImportError:
+    else:
         user_data = None
     
     return jsonify({
@@ -194,29 +193,29 @@ def get_current_user():
 @login_required
 def dashboard():
     """User dashboard"""
-    try:
-        from app import firestore_manager
+    firestore_manager = current_app.extensions.get('firestore_manager')
+    if firestore_manager and firestore_manager.use_firestore:
         user_data = firestore_manager.get_user_data(session['user_id'])
-    except ImportError:
+    else:
         user_data = None
-    
+
     return render_template('auth/dashboard.html', user_data=user_data)
 
 @auth_bp.route('/membership', methods=['GET'])
 @login_required
 def membership():
     """Membership plans page"""
-    try:
-        from app import firestore_manager
+    firestore_manager = current_app.extensions.get('firestore_manager')
+    if firestore_manager and firestore_manager.use_firestore:
         user_data = firestore_manager.get_user_data(session['user_id'])
-        
+
         # Compute member type based on subscription
         member_type = 'free'  # Default to free
         if user_data and user_data.get('subscription'):
             subscription = user_data['subscription']
             plan = subscription.get('plan', 'free')
             status = subscription.get('status', 'inactive')
-            
+
             # Determine member type
             if status == 'active' and plan in ['basic', 'pro', 'enterprise']:
                 member_type = 'freemium'
@@ -224,16 +223,15 @@ def membership():
                 member_type = 'freemium'
             elif plan == 'max' or (status == 'active' and plan == 'max'):
                 member_type = 'max'
-        
+
         user_context = {
             'uid': session['user_id'],
             'email': session.get('user_email'),
             'member_type': member_type
         }
-        
+
         return render_template('auth/membership.html', user_data=user_context)
-        
-    except ImportError:
+    else:
         # Fallback when Firestore is not available
         user_context = {
             'uid': session['user_id'],
@@ -246,10 +244,10 @@ def membership():
 @login_required
 def profile():
     """User profile page"""
-    try:
-        from app import firestore_manager
+    firestore_manager = current_app.extensions.get('firestore_manager')
+    if firestore_manager and firestore_manager.use_firestore:
         user_data = firestore_manager.get_user_data(session['user_id'])
-        
+
         # Get Firebase user data for additional info
         firebase_auth_manager = current_app.extensions.get('firebase_auth')
         firebase_user = None
@@ -257,7 +255,7 @@ def profile():
             firebase_user = firebase_auth.get_user(session['user_id'])
         except Exception as e:
             logger.warning(f"Could not get Firebase user data: {e}")
-        
+
         # Combine data sources
         profile_data = {
             'uid': session['user_id'],
@@ -272,7 +270,7 @@ def profile():
                 'theme': 'light'
             }
         }
-        
+
         # Add Firebase data if available
         if firebase_user:
             profile_data.update({
@@ -280,7 +278,7 @@ def profile():
                 'phone_number': firebase_user.phone_number or '',
                 'photo_url': getattr(firebase_user, 'photo_url', '')
             })
-        
+
         # Add Firestore data if available
         if user_data:
             profile_data.update({
@@ -289,14 +287,14 @@ def profile():
                 'created_at': user_data.get('created_at'),
                 'last_login': user_data.get('last_login')
             })
-        
+
         # Compute member type based on subscription
         member_type = 'free'  # Default to free
         if user_data and user_data.get('subscription'):
             subscription = user_data['subscription']
             plan = subscription.get('plan', 'free')
             status = subscription.get('status', 'inactive')
-            
+
             # Determine member type
             if status == 'active' and plan in ['basic', 'pro', 'enterprise']:
                 member_type = 'freemium'
@@ -304,12 +302,11 @@ def profile():
                 member_type = 'freemium'
             elif plan == 'max' or (status == 'active' and plan == 'max'):
                 member_type = 'max'
-        
+
         profile_data['member_type'] = member_type
-        
+
         return render_template('auth/profile.html', profile_data=profile_data)
-        
-    except ImportError:
+    else:
         # Fallback when Firestore is not available
         profile_data = {
             'uid': session['user_id'],
@@ -389,10 +386,10 @@ def update_profile():
                 logger.warning(f"Could not update Firebase display name: {e}")
         
         # Update data in Firestore
-        try:
-            from app import firestore_manager
+        firestore_manager = current_app.extensions.get('firestore_manager')
+        if firestore_manager and firestore_manager.use_firestore:
             success = firestore_manager.update_user_data(session['user_id'], update_data)
-            
+
             if success:
                 logger.info(f"Profile updated for user: {session['user_id']}")
                 return jsonify({
@@ -402,8 +399,7 @@ def update_profile():
                 })
             else:
                 return jsonify({'error': 'Failed to update profile in database'}), 500
-                
-        except ImportError:
+        else:
             logger.warning("Firestore not available - profile update not persisted")
             return jsonify({
                 'success': True,
