@@ -79,12 +79,8 @@ share/
 downloads/
 *.html.report
 
-# Ignore compiled JS/CSS from Vite build
+# Ignore compiled/built JS/CSS (from build tools)
 /static/dist/
-.vite-manifest.json
-
-# Keep source files
-!/static/src/
 
 # Byte-compiled / optimized / DLL files
 *.so

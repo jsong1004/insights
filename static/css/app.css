@@ -1,0 +1,556 @@
+/**
+ * Application Styles - AI Insights Generator
+ * Version: 2.0
+ * Last Updated: November 7, 2025
+ * Professional Blue Theme
+ */
+
+/* ============================================
+   GLOBAL STYLES
+   ============================================ */
+
+body {
+  background: var(--bg-secondary);
+  min-height: 100vh;
+  font-family: var(--font-primary);
+}
+
+/* ============================================
+   NAVBAR STYLES
+   ============================================ */
+
+.navbar {
+  background: rgba(255, 255, 255, 0.95) !important;
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--gray-200);
+}
+
+.navbar-brand {
+  font-weight: var(--font-bold);
+  color: var(--primary-600) !important;
+}
+
+.nav-link {
+  color: var(--text-secondary) !important;
+  font-weight: var(--font-medium);
+  transition: color var(--duration-slow) var(--ease-out);
+}
+
+.nav-link:hover {
+  color: var(--primary-600) !important;
+}
+
+/* ============================================
+   MAIN CONTAINER
+   ============================================ */
+
+.main-container {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: var(--radius-2xl);
+  box-shadow: var(--shadow-xl);
+  margin: var(--space-8) auto;
+  overflow: hidden;
+}
+
+/* ============================================
+   SIDEBAR
+   ============================================ */
+
+.sidebar {
+  background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
+  border-right: 1px solid var(--gray-200);
+  min-height: 600px;
+}
+
+.sidebar-header {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  padding: var(--space-6);
+  font-weight: var(--font-semibold);
+  border-bottom: 3px solid var(--primary-600);
+}
+
+/* ============================================
+   INSIGHT ITEMS
+   ============================================ */
+
+.insight-item {
+  background: var(--bg-primary);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-xl);
+  margin-bottom: var(--space-4);
+  padding: var(--space-4);
+  transition: all var(--duration-slow) var(--ease-out);
+  cursor: pointer;
+}
+
+.insight-item:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--primary-500);
+}
+
+.insight-item.active {
+  border-color: var(--primary-600);
+  background: linear-gradient(135deg, var(--primary-50) 0%, var(--secondary-50) 100%);
+}
+
+/* ============================================
+   HOME PAGE
+   ============================================ */
+
+.hero-section {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  padding: var(--space-16) 0;
+  text-align: center;
+  border-bottom: 3px solid var(--primary-600);
+}
+
+.hero-title {
+  font-size: var(--text-5xl);
+  font-weight: var(--font-bold);
+  margin-bottom: var(--space-4);
+  color: var(--text-primary);
+}
+
+.hero-subtitle {
+  font-size: var(--text-xl);
+  opacity: 0.9;
+  max-width: 600px;
+  margin: 0 auto var(--space-8);
+}
+
+.feature-card {
+  background: var(--bg-primary);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-xl);
+  padding: var(--space-8);
+  text-align: center;
+  transition: all var(--duration-slow) var(--ease-out);
+  height: 100%;
+}
+
+.feature-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-xl);
+  border-color: var(--primary-500);
+}
+
+.feature-icon {
+  font-size: var(--text-5xl);
+  color: var(--primary-600);
+  margin-bottom: var(--space-4);
+}
+
+.feature-title {
+  font-size: var(--text-xl);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  margin-bottom: var(--space-2);
+}
+
+.feature-description {
+  color: var(--text-secondary);
+  font-size: var(--text-base);
+}
+
+/* ============================================
+   INSIGHTS PAGE
+   ============================================ */
+
+.insights-header {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  padding: var(--space-8) 0;
+  margin-bottom: var(--space-8);
+  border-bottom: 3px solid var(--primary-600);
+}
+
+.insights-form {
+  background: var(--bg-primary);
+  border-radius: var(--radius-2xl);
+  padding: var(--space-8);
+  box-shadow: var(--shadow-md);
+}
+
+.insight-card {
+  background: var(--bg-primary);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-xl);
+  padding: var(--space-6);
+  margin-bottom: var(--space-6);
+  transition: all var(--duration-normal) var(--ease-out);
+}
+
+.insight-card:hover {
+  box-shadow: var(--shadow-lg);
+}
+
+.confidence-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-full);
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  background: linear-gradient(135deg, var(--success-600) 0%, var(--success-700) 100%);
+  color: var(--text-inverse);
+}
+
+.source-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  background: var(--gray-50);
+  border-radius: var(--radius-lg);
+  font-size: var(--text-sm);
+  color: var(--primary-600);
+  text-decoration: none;
+  transition: all var(--duration-normal) var(--ease-out);
+}
+
+.source-link:hover {
+  background: var(--primary-50);
+  text-decoration: none;
+}
+
+/* ============================================
+   COMMUNITY PAGE
+   ============================================ */
+
+.community-page {
+  background: var(--bg-secondary);
+  min-height: 100vh;
+}
+
+.community-header {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  padding: var(--space-12) 0;
+  margin-bottom: var(--space-8);
+  border-bottom: 3px solid var(--primary-600);
+}
+
+.community-title {
+  font-size: var(--text-4xl);
+  font-weight: var(--font-bold);
+  margin-bottom: var(--space-2);
+}
+
+.community-subtitle {
+  font-size: var(--text-xl);
+  opacity: 0.9;
+}
+
+.community-description {
+  font-size: var(--text-base);
+  opacity: 0.85;
+  max-width: 600px;
+  margin: var(--space-4) auto 0;
+}
+
+.feed-controls {
+  background: var(--bg-primary);
+  border-radius: var(--radius-xl);
+  padding: var(--space-6);
+  margin-bottom: var(--space-8);
+  box-shadow: var(--shadow-sm);
+}
+
+.filter-tabs {
+  display: flex;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.filter-tab {
+  padding: var(--space-3) var(--space-6);
+  border: 2px solid var(--gray-200);
+  background: var(--bg-primary);
+  border-radius: 25px;
+  cursor: pointer;
+  transition: all var(--duration-normal) var(--ease-out);
+  text-decoration: none;
+  color: var(--text-secondary);
+  font-weight: var(--font-medium);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.filter-tab:hover {
+  border-color: var(--primary-600);
+  color: var(--primary-600);
+  text-decoration: none;
+}
+
+.filter-tab.active {
+  background: var(--primary-600);
+  color: var(--text-inverse);
+  border-color: var(--primary-600);
+}
+
+.empty-state {
+  text-align: center;
+  padding: var(--space-16) var(--space-8);
+  color: var(--text-secondary);
+}
+
+.empty-state i {
+  font-size: var(--text-5xl);
+  margin-bottom: var(--space-4);
+  color: var(--gray-400);
+}
+
+.empty-state h3 {
+  color: var(--text-primary);
+  margin-bottom: var(--space-2);
+}
+
+/* ============================================
+   PAGINATION
+   ============================================ */
+
+.pagination-wrapper {
+  display: flex;
+  justify-content: center;
+  margin-top: var(--space-12);
+}
+
+.pagination {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.pagination a,
+.pagination span {
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-lg);
+  text-decoration: none;
+  color: var(--text-secondary);
+  transition: all var(--duration-normal) var(--ease-out);
+}
+
+.pagination a:hover {
+  border-color: var(--primary-600);
+  color: var(--primary-600);
+  text-decoration: none;
+}
+
+.pagination .current {
+  background: var(--primary-600);
+  color: var(--text-inverse);
+  border-color: var(--primary-600);
+}
+
+/* ============================================
+   INSIGHTS CONTEXT (Expandable Details)
+   ============================================ */
+
+.insights-context-row {
+  background: var(--bg-secondary);
+  transition: all var(--duration-slow) var(--ease-out);
+}
+
+.insights-context-cell {
+  padding: 0 !important;
+  border-top: none !important;
+}
+
+.insights-context {
+  background: var(--bg-secondary);
+  border-radius: 0;
+  padding: var(--space-4) var(--space-5);
+  margin: 0;
+  border-left: 4px solid var(--primary-600);
+  border-top: 1px solid var(--gray-200);
+}
+
+.insight-title {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  font-size: var(--text-base);
+  margin-bottom: var(--space-2);
+}
+
+.insight-summary {
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
+  color: var(--text-secondary);
+  margin-left: var(--space-6);
+}
+
+.toggle-insights-btn {
+  font-size: var(--text-sm);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-md);
+  transition: all var(--duration-normal) var(--ease-out);
+}
+
+.toggle-insights-btn:hover {
+  transform: translateY(-1px);
+}
+
+.toggle-insights-btn i {
+  transition: transform var(--duration-normal) var(--ease-out);
+}
+
+.toggle-insights-btn.expanded i {
+  transform: rotate(180deg);
+}
+
+/* ============================================
+   AUTH PAGES
+   ============================================ */
+
+.auth-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-primary);
+  padding: var(--space-8) var(--space-4);
+}
+
+.auth-card {
+  background: var(--bg-primary);
+  border-radius: var(--radius-2xl);
+  padding: var(--space-10);
+  box-shadow: var(--shadow-2xl);
+  max-width: 450px;
+  width: 100%;
+}
+
+.auth-title {
+  font-size: var(--text-3xl);
+  font-weight: var(--font-bold);
+  color: var(--text-primary);
+  margin-bottom: var(--space-2);
+  text-align: center;
+}
+
+.auth-subtitle {
+  font-size: var(--text-base);
+  color: var(--text-secondary);
+  margin-bottom: var(--space-8);
+  text-align: center;
+}
+
+/* ============================================
+   LOADING STATES
+   ============================================ */
+
+.spinner {
+  display: inline-block;
+  width: var(--space-6);
+  height: var(--space-6);
+  border: 2px solid var(--gray-200);
+  border-top-color: var(--primary-600);
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.spinner-sm {
+  width: var(--space-4);
+  height: var(--space-4);
+  border-width: 1.5px;
+}
+
+.spinner-lg {
+  width: var(--space-8);
+  height: var(--space-8);
+  border-width: 3px;
+}
+
+/* ============================================
+   RESPONSIVE DESIGN
+   ============================================ */
+
+@media (max-width: 768px) {
+  .community-title {
+    font-size: var(--text-3xl);
+  }
+
+  .filter-tabs {
+    justify-content: center;
+  }
+
+  .insight-title {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .confidence-badge,
+  .insight-summary {
+    margin-left: 0;
+  }
+
+  .hero-title {
+    font-size: var(--text-3xl);
+  }
+
+  .hero-subtitle {
+    font-size: var(--text-lg);
+  }
+}
+
+@media (max-width: 640px) {
+  .main-container {
+    margin: var(--space-4) auto;
+    border-radius: var(--radius-xl);
+  }
+
+  .hero-section {
+    padding: var(--space-12) 0;
+  }
+
+  .auth-card {
+    padding: var(--space-6);
+  }
+}
+
+/* ============================================
+   CUSTOM ANIMATIONS
+   ============================================ */
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideInUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.fade-in {
+  animation: fadeIn var(--duration-slow) var(--ease-out);
+}
+
+.slide-in-up {
+  animation: slideInUp var(--duration-slow) var(--ease-out);
+}

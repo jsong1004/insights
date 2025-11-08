@@ -1,222 +1,309 @@
 {% extends "base.html" %}
 
-{% block body_attrs %} data-page="community"{% endblock %}
-
-{% block title %}Community Insights{% endblock %}
+{% block title %}Shared Insights - AI Insights Generator{% endblock %}
 
 {% block content %}
 <div class="community-page">
-    <!-- Header -->
-    <div class="community-header">
-        <div class="container">
-            <div class="text-center">
-                <h1 class="community-title">
-                    <i class="fas fa-users me-3"></i>Community Insights
-                </h1>
-                <p class="community-subtitle">
-                    Explore and contribute AI-driven insights to our growing community.
-                </p>
-                <p class="community-description mt-3">
-                    <i class="fas fa-heart me-2 text-danger"></i>
-
-                    Your likes help surface the best content and strengthen our shared learning experience.
-                </p>
-            </div>
-        </div>
+    <!-- Insights Header -->
+    <div class="community-header text-center">
+        <h1 class="community-title">
+            <i class="fas fa-compass me-3"></i>Shared Insights
+        </h1>
+        <p class="community-subtitle">
+            Explore AI-generated insights from the community
+        </p>
+        <p class="community-description">
+            Explore AI-generated research and analysis on various topics from users around the world
+        </p>
     </div>
 
     <div class="container">
-        <!-- Feed Controls -->
+        <!-- Filter Controls -->
         <div class="feed-controls">
             <div class="filter-tabs">
-                <a href="{{ url_for('main.community') }}?sort=recent" 
-                   class="filter-tab {{ 'active' if sort_by == 'recent' else '' }}">
-                    <i class="fas fa-clock"></i>
-                    Recent
+                <a href="{{ url_for('main.shared_insights', sort='recent') }}"
+                   class="filter-tab {% if sort_by == 'recent' %}active{% endif %}">
+                    <i class="fas fa-clock me-2"></i>Recent
                 </a>
-                <a href="{{ url_for('main.community') }}?sort=trending" 
-                   class="filter-tab {{ 'active' if sort_by == 'trending' else '' }}">
-                    <i class="fas fa-fire"></i>
-                    Trending
+                <a href="{{ url_for('main.shared_insights', sort='trending') }}"
+                   class="filter-tab {% if sort_by == 'trending' %}active{% endif %}">
+                    <i class="fas fa-fire me-2"></i>Trending
                 </a>
-                <a href="{{ url_for('main.community') }}?sort=most_liked" 
-                   class="filter-tab {{ 'active' if sort_by == 'most_liked' else '' }}">
-                    <i class="fas fa-heart"></i>
-                    Most Liked
+                <a href="{{ url_for('main.shared_insights', sort='most_liked') }}"
+                   class="filter-tab {% if sort_by == 'most_liked' %}active{% endif %}">
+                    <i class="fas fa-heart me-2"></i>Most Liked
                 </a>
-                <a href="{{ url_for('main.community') }}?sort=featured" 
-                   class="filter-tab {{ 'active' if sort_by == 'featured' else '' }}">
-                    <i class="fas fa-star"></i>
-                    Featured
+                <a href="{{ url_for('main.shared_insights', sort='featured') }}"
+                   class="filter-tab {% if sort_by == 'featured' %}active{% endif %}">
+                    <i class="fas fa-star me-2"></i>Featured
                 </a>
             </div>
         </div>
 
-        <!-- Community Insights Table -->
-        <div class="row">
-            <div class="col-12">
-                <div class="card shadow-sm">
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table table-hover">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th>Title</th>
-                                        <th>Author</th>
-                                        <th>Date</th>
-                                        <th>Likes</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% if insights %}
-                                        {% for insight in insights %}
-                                        <tr data-insight-id="{{ insight.id }}">
-                                            <td>
-                                                <a href="{{ url_for('main.view_insights', insight_id=insight.id) }}" class="text-decoration-none">
-                                                    <div class="fw-semibold text-primary">{{ insight.topic }}</div>
-                                                </a>
-                                                {% if insight.insights %}
-                                                <div class="mt-2">
-                                                    <button class="btn btn-sm btn-outline-info toggle-insights-btn" 
-                                                            onclick="toggleInsights('{{ insight.id }}')"
-                                                            data-insight-id="{{ insight.id }}">
-                                                        <i class="fas fa-chevron-down me-1"></i>
-                                                        <span class="toggle-text">Show Details</span>
-                                                        <span class="badge bg-secondary ms-1">{{ insight.insights|length }}</span>
-                                                    </button>
-                                                </div>
-                                                {% endif %}
-                                            </td>
-                                            <td>
-                                                <div>{{ insight.author_name or 'Anonymous' }}</div>
-                                            </td>
-                                            <td>
-                                                <div>{{ moment(insight.timestamp).format('MMM DD, YYYY') if moment else insight.timestamp[:10] }}</div>
-                                            </td>
-                                            <td>
-                                                {% if session.user_id %}
-                                                    {% set user_liked = session.user_id in (insight.liked_by or []) %}
-                                                    <button class="btn btn-sm btn-outline-danger like-btn" 
-                                                            data-insight-id="{{ insight.id }}"
-                                                            data-liked="{{ 'true' if user_liked else 'false' }}"
-                                                            onclick="toggleLike('{{ insight.id }}', this)"
-                                                            {{ 'disabled' if user_liked else '' }}>
-                                                        <i class="fas fa-heart"></i>
-                                                        <span class="like-count">{{ insight.likes or 0 }}</span>
-                                                    </button>
-                                                {% else %}
-                                                    <span class="btn btn-sm btn-outline-secondary" disabled>
-                                                        <i class="fas fa-heart"></i>
-                                                        <span>{{ insight.likes or 0 }}</span>
-                                                    </span>
-                                                {% endif %}
-                                            </td>
-                                        </tr>
-                                        <!-- Insights Context Row -->
-                                        {% if insight.insights %}
-                                        <tr class="insights-context-row d-none" id="insights-{{ insight.id }}">
-                                            <td colspan="4" class="insights-context-cell">
-                                                <div class="insights-context">
-                                                    {% for item in insight.insights[:3] %}
-                                                    <div class="insight-item mb-2">
-                                                        <div class="insight-title">
-                                                            <i class="fas fa-lightbulb me-1 text-warning"></i>
-                                                            <strong>{{ item.title }}</strong>
-                                                            <span class="confidence-badge ms-2">
-                                                                {{ (item.confidence_score * 100) | round(0) | int }}% Confidence
-                                                            </span>
-                                                        </div>
-                                                        <div class="insight-summary text-muted small mt-1">
-                                                            {{ item.summary[:150] }}{% if item.summary|length > 150 %}...{% endif %}
-                                                        </div>
-                                                    </div>
-                                                    {% endfor %}
-                                                </div>
-                                            </td>
-                                        </tr>
-                                        {% endif %}
-                                        {% endfor %}
-                                    {% else %}
-                                        <!-- Empty State -->
-                                        <tr>
-                                            <td colspan="4" class="text-center py-4">
-                                                <i class="fas fa-lightbulb fa-2x mb-3 d-block text-muted"></i>
-                                                <div class="text-muted">No insights shared yet</div>
-                                                <div class="mt-2">
-                                                    <a href="{{ url_for('main.insights') }}" class="btn btn-primary btn-sm">
-                                                        <i class="fas fa-plus me-1"></i>
-                                                        Generate Your First Insight
-                                                    </a>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    {% endif %}
-                                </tbody>
-                            </table>
-                        </div>
+        <!-- Insights Grid -->
+        {% if insights %}
+        <div class="insights-grid">
+            {% for insight in insights %}
+            <div class="insight-card fade-in">
+                <!-- Card Header -->
+                <div class="insight-card-header">
+                    <h3 class="insight-card-title">
+                        <i class="fas fa-lightbulb me-2 text-primary"></i>
+                        <a href="{{ url_for('main.view_insight', insight_id=insight.id) }}" class="text-decoration-none">
+                            {{ insight.topic }}
+                        </a>
+                    </h3>
+                    <button class="like-btn btn btn-sm {% if insight.id in user_liked_insights %}btn-danger{% else %}btn-outline-danger{% endif %}"
+                            onclick="toggleLike('{{ insight.id }}', this)"
+                            data-liked="{{ 'true' if insight.id in user_liked_insights else 'false' }}">
+                        <i class="fas fa-heart me-1"></i>
+                        <span class="like-count">{{ insight.likes }}</span>
+                    </button>
+                </div>
+
+                <!-- Card Body -->
+                <div class="insight-card-body">
+                    {% if insight.insights and insight.insights|length > 0 %}
+                        <p class="insight-preview">
+                            {{ insight.insights[0].summary[:200] }}{% if insight.insights[0].summary|length > 200 %}...{% endif %}
+                        </p>
+                    {% else %}
+                        <p class="insight-preview text-muted">
+                            <em>Click to view the complete analysis and insights...</em>
+                        </p>
+                    {% endif %}
+
+                    <div class="insight-badges">
+                        <span class="badge bg-primary me-2">
+                            <i class="fas fa-brain me-1"></i>{{ insight.total_insights }} Insights
+                        </span>
+                        {% if insight.total_tokens %}
+                        <span class="badge bg-info">
+                            <i class="fas fa-bolt me-1"></i>{{ "{:,}".format(insight.total_tokens) }} tokens
+                        </span>
+                        {% endif %}
                     </div>
                 </div>
+
+                <!-- Card Footer -->
+                <div class="insight-card-footer">
+                    <div class="author-info">
+                        <i class="fas fa-user-circle text-primary me-2"></i>
+                        <span class="author-name">{{ insight.author_name or 'Anonymous' }}</span>
+                    </div>
+                    <div class="insight-meta">
+                        <span class="insight-date">
+                            <i class="fas fa-calendar-alt me-1"></i>
+                            {{ insight.timestamp|format_date }}
+                        </span>
+                    </div>
+                    <a href="{{ url_for('main.view_insight', insight_id=insight.id) }}"
+                       class="btn btn-primary btn-sm">
+                        View Details <i class="fas fa-arrow-right ms-1"></i>
+                    </a>
+                </div>
             </div>
+            {% endfor %}
         </div>
 
         <!-- Pagination -->
-        {% if pagination and pagination.pages > 1 %}
+        {% if total_pages > 1 %}
         <div class="pagination-wrapper">
-            <div class="pagination">
-                {% if pagination.has_prev %}
-                    <a href="{{ url_for('main.community', page=pagination.prev_num, sort=sort_by) }}">
-                        <i class="fas fa-chevron-left"></i>
-                    </a>
-                {% endif %}
-                
-                {% for page_num in pagination.iter_pages() %}
-                    {% if page_num %}
-                        {% if page_num != pagination.page %}
-                            <a href="{{ url_for('main.community', page=page_num, sort=sort_by) }}">{{ page_num }}</a>
-                        {% else %}
-                            <span class="current">{{ page_num }}</span>
-                        {% endif %}
-                    {% else %}
-                        <span>...</span>
+            <nav aria-label="Insights pagination">
+                <ul class="pagination">
+                    {% if page > 1 %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('main.shared_insights', sort=sort_by, page=page-1) }}">
+                            <i class="fas fa-chevron-left"></i> Previous
+                        </a>
+                    </li>
                     {% endif %}
-                {% endfor %}
-                
-                {% if pagination.has_next %}
-                    <a href="{{ url_for('main.community', page=pagination.next_num, sort=sort_by) }}">
-                        <i class="fas fa-chevron-right"></i>
-                    </a>
-                {% endif %}
-            </div>
+
+                    {% for p in range(1, total_pages + 1) %}
+                        {% if p == page %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ p }}</span>
+                        </li>
+                        {% elif p == 1 or p == total_pages or (p >= page - 2 and p <= page + 2) %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('main.shared_insights', sort=sort_by, page=p) }}">{{ p }}</a>
+                        </li>
+                        {% elif p == page - 3 or p == page + 3 %}
+                        <li class="page-item disabled">
+                            <span class="page-link">...</span>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if page < total_pages %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('main.shared_insights', sort=sort_by, page=page+1) }}">
+                            Next <i class="fas fa-chevron-right"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+        {% endif %}
+
+        {% else %}
+        <!-- Empty State -->
+        <div class="empty-state">
+            <i class="fas fa-inbox fa-4x"></i>
+            <h3>No Insights Yet</h3>
+            <p>Be the first to share an insight with the community!</p>
+            <a href="{{ url_for('main.insights') }}" class="btn btn-primary mt-3">
+                <i class="fas fa-plus-circle me-2"></i>Generate Your First Insight
+            </a>
         </div>
         {% endif %}
     </div>
 </div>
-{% endblock %}
 
-{% block scripts %}
-<script>
-// Global function for template onclick handlers (backward compatibility)
-function toggleInsights(insightId) {
-    const insightsRow = document.getElementById('insights-' + insightId);
-    const toggleBtn = document.querySelector(`[data-insight-id="${insightId}"].toggle-insights-btn`);
-    const toggleText = toggleBtn.querySelector('.toggle-text');
-    const chevronIcon = toggleBtn.querySelector('i');
+<style>
+/* Community Insights Card Grid Styles */
+.insights-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: var(--space-6);
+    margin: var(--space-8) 0;
+}
 
-    if (insightsRow.classList.contains('d-none')) {
-        // Show insights
-        insightsRow.classList.remove('d-none');
-        toggleText.textContent = 'Hide Details';
-        toggleBtn.classList.add('expanded');
-        chevronIcon.classList.remove('fa-chevron-down');
-        chevronIcon.classList.add('fa-chevron-up');
-    } else {
-        // Hide insights
-        insightsRow.classList.add('d-none');
-        toggleText.textContent = 'Show Details';
-        toggleBtn.classList.remove('expanded');
-        chevronIcon.classList.remove('fa-chevron-up');
-        chevronIcon.classList.add('fa-chevron-down');
+.insight-card {
+    background: var(--bg-primary);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-xl);
+    padding: var(--space-6);
+    transition: all var(--duration-normal) var(--ease-out);
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    box-shadow: var(--shadow-sm);
+}
+
+.insight-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-xl);
+    border-color: var(--primary-500);
+}
+
+.insight-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: var(--space-4);
+    gap: var(--space-3);
+}
+
+.insight-card-title {
+    font-size: var(--text-lg);
+    font-weight: var(--font-semibold);
+    margin: 0;
+    flex: 1;
+    line-height: var(--leading-tight);
+}
+
+.insight-card-title a {
+    color: var(--text-primary);
+    transition: color var(--duration-fast) var(--ease-out);
+}
+
+.insight-card-title a:hover {
+    color: var(--primary-600);
+}
+
+.like-btn {
+    flex-shrink: 0;
+    border-radius: var(--radius-full);
+    padding: var(--space-2) var(--space-3);
+    transition: all var(--duration-fast) var(--ease-out);
+}
+
+.like-btn:hover {
+    transform: scale(1.1);
+}
+
+.insight-card-body {
+    flex: 1;
+    margin-bottom: var(--space-4);
+}
+
+.insight-preview {
+    color: var(--text-secondary);
+    font-size: var(--text-sm);
+    line-height: var(--leading-relaxed);
+    margin-bottom: var(--space-3);
+}
+
+.insight-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+}
+
+.insight-badges .badge {
+    font-size: var(--text-xs);
+    padding: var(--space-1) var(--space-3);
+    border-radius: var(--radius-full);
+}
+
+.insight-card-footer {
+    border-top: 1px solid var(--gray-200);
+    padding-top: var(--space-4);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+.author-info {
+    display: flex;
+    align-items: center;
+    font-size: var(--text-sm);
+}
+
+.author-name {
+    color: var(--text-primary);
+    font-weight: var(--font-medium);
+}
+
+.insight-meta {
+    display: flex;
+    align-items: center;
+    font-size: var(--text-xs);
+    color: var(--text-secondary);
+}
+
+.insight-date {
+    display: flex;
+    align-items: center;
+}
+
+.insight-card-footer .btn {
+    align-self: flex-start;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .insights-grid {
+        grid-template-columns: 1fr;
+        gap: var(--space-4);
+    }
+
+    .insight-card-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .like-btn {
+        align-self: flex-end;
     }
 }
-</script>
-{% endblock %} 
+
+@media (min-width: 769px) and (max-width: 1024px) {
+    .insights-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+</style>
+{% endblock %}

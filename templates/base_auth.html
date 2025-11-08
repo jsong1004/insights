@@ -15,18 +15,18 @@
     <!-- Custom CSS -->
     <style>
         :root {
-            --primary-color: #667eea;
-            --secondary-color: #764ba2;
+            --primary-color: #2563EB;
+            --secondary-color: #1E40AF;
             --accent-color: #f093fb;
             --success-color: #10b981;
             --warning-color: #f59e0b;
             --error-color: #ef4444;
-            --dark-color: #1f2937;
-            --light-color: #f8fafc;
+            --dark-color: #0F172A;
+            --light-color: #F8FAFC;
         }
 
         body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: var(--light-color);
             min-height: 100vh;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
@@ -268,8 +268,8 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('main.community') }}">
-                            <i class="fas fa-users me-1"></i>Community
+                        <a class="nav-link" href="{{ url_for('main.shared_insights') }}">
+                            <i class="fas fa-compass me-1"></i>Insights
                         </a>
                     </li>
                     {% if session.user_id %}
